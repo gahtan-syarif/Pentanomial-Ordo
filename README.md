@@ -1,4 +1,4 @@
-Python script that recalculates ordo ratings with pentanomial error bars using a statistical method called bootstrapping.
+Python script that recalculates [Ordo](https://github.com/michiguel/Ordo) ratings with pentanomial error bars using a statistical method called bootstrapping.
 How to use:
 - place the script inside a folder with ordo.exe and the pgn file.
 - Run the command: `python pentaordo.py --pgnfile NAME --simulations NUM --ordoargs ARGS
