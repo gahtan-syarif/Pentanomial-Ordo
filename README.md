@@ -6,4 +6,4 @@ How to use:
 - for the number of simulations the minimum recommended amount is 1000 although the higher the more accurate the error bar
 - This program only works when the tournament is a roundrobin where games are played in pairs where each engine plays both colors and where each engine plays every other engine an equal amount of times.
 - PGNs must be correctly formatted where every unique gamepair has a unique "Rounds" PGN header tag. so if for example a pgn has 100 games then the "Rounds" tag must be incremented from 1 to 50 for every gamepair.
-- Make ure the engine names in the PGN does not contain any whitespace.
+- Make sure the engine names in the PGN does not contain any whitespace.
