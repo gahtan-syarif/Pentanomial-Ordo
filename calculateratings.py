@@ -128,18 +128,22 @@ def calculate_probabilities(results):
         for engine2 in results[engine1]:
             LL, LD, WLDD, WD, WW = results[engine1][engine2]
             total_pairs = LL + LD + WLDD + WD + WW
+            if total_pairs == 0:
+                print(f"Warning: No pairs played between {engine1} and {engine2}")
             probabilities[engine1][engine2] = (LL / total_pairs, LD / total_pairs, WLDD / total_pairs, WD / total_pairs, WW / total_pairs)
             
     return probabilities
 
-def simulate_tournament(probabilities, engines, num_pairs_per_pairing, rng):
+def simulate_tournament(probabilities, engines, rng, results):
     sim_results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
     
     for i in range(len(engines)):
         for j in range(i + 1, len(engines)):
             engine1 = engines[i]
             engine2 = engines[j]
-            outcomes = simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing,rng)
+            LL, LD, WLDD, WD, WW = results[engine1][engine2]
+            total_pairs = LL + LD + WLDD + WD + WW
+            outcomes = simulate_matches(probabilities, engine1, engine2, total_pairs, rng)
             update_results_batch(sim_results, engine1, engine2, outcomes)
                 
     return sim_results
@@ -172,25 +176,6 @@ def update_results_batch(results, engine1, engine2, outcomes):
         results[engine1][engine2][1],
         results[engine1][engine2][0]
     )
-    
-def update_results(results, engine1, engine2, outcome):
-    if outcome == 'LL':
-        results[engine1][engine2] = (results[engine1][engine2][0] + 1, results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
-        results[engine2][engine1] = (results[engine2][engine1][0], results[engine2][engine1][1], results[engine2][engine1][2], results[engine2][engine1][3], results[engine2][engine1][4] + 1)
-    elif outcome == 'LD':
-        results[engine1][engine2] = (results[engine1][engine2][0], results[engine1][engine2][1] + 1, results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
-        results[engine2][engine1] = (results[engine2][engine1][0], results[engine2][engine1][1], results[engine2][engine1][2], results[engine2][engine1][3] + 1, results[engine2][engine1][4])
-    elif outcome == 'WLDD':
-        results[engine1][engine2] = (results[engine1][engine2][0], results[engine1][engine2][1], results[engine1][engine2][2] + 1, results[engine1][engine2][3], results[engine1][engine2][4])
-        results[engine2][engine1] = (results[engine2][engine1][0], results[engine2][engine1][1], results[engine2][engine1][2] + 1, results[engine2][engine1][3], results[engine2][engine1][4])
-    elif outcome == 'WD':
-        results[engine1][engine2] = (results[engine1][engine2][0], results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3] + 1, results[engine1][engine2][4])
-        results[engine2][engine1] = (results[engine2][engine1][0], results[engine2][engine1][1] + 1, results[engine2][engine1][2], results[engine2][engine1][3], results[engine2][engine1][4])
-    elif outcome == 'WW':
-        results[engine1][engine2] = (results[engine1][engine2][0], results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4] + 1)
-        results[engine2][engine1] = (results[engine2][engine1][0] + 1, results[engine2][engine1][1], results[engine2][engine1][2], results[engine2][engine1][3], results[engine2][engine1][4])
-    else:
-        raise ValueError("Result must be 'LL', 'LD', 'WLDD', 'WD', or 'WW'")
         
 def update_pentanomial(results, engine1, engine2, pentanomial):
     results[engine1][engine2] = tuple(pentanomial)
@@ -257,10 +242,6 @@ def set_initial_ratings(engines, initial_rating):
     
     return initial_ratings
 
-def elo_probability(RA, RB):
-    """ Calculate the probability of engine A winning against engine B based on Elo ratings. """
-    return 1 / (1 + 10**((RB - RA) / 400))
-
 def scores_to_matrix(engines, score_dict):
     """ Convert the score dictionary to a matrix form for optimization. """
     num_engines = len(engines)
@@ -311,7 +292,7 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
         args=(engines, score_matrix),
         method='L-BFGS-B',
         bounds=[(0, None)] * num_engines,
-        options={'gtol': 1e-9}  # Increased precision
+        options={'gtol': 1e-8}  # Increased precision
     )
     # Check if the result converged
     global did_not_converge
@@ -396,7 +377,6 @@ initial_ratings = set_initial_ratings(engines, 0)
 scores = calculate_expected_scores(results)
 mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
 probabilities = calculate_probabilities(results)
-num_pairs_per_pairing = results[engines[0]][engines[1]][0] + results[engines[0]][engines[1]][1] + results[engines[0]][engines[1]][2] + results[engines[0]][engines[1]][3] + results[engines[0]][engines[1]][4]
 
 # Simulate the tournament
 num_simulations = args.simulations
@@ -404,7 +384,7 @@ simulated_ratings = {}
 print("Starting simulation...")
 start_time = time.time()
 for i in range(num_simulations): # 1000 is the typical minimum number of bootstrap samples, but the more the better
-    simulated_results = simulate_tournament(probabilities, engines, num_pairs_per_pairing, rng)
+    simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results)
     
     simulated_ratings[i] = optimize_elo_ratings(engines, simulated_scores, initial_ratings, args.average, args.anchor)
@@ -430,4 +410,5 @@ ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
 format_ratings_result(ratings_with_error_bars)
 print(f"Total Simulation time: {elapsed_time:.4f} seconds")
 if did_not_converge == True:
-    print("Warning: optimization did not converge properly")
+    print("Warning: optimization did not converge properly in one of the simulations")
+
