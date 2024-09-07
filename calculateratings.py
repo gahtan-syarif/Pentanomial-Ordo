@@ -129,16 +129,16 @@ def calculate_probabilities(results):
 
 def simulate_tournament(probabilities, engines, num_pairs_per_pairing):
     sim_results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
-    
-    for _ in range(num_pairs_per_pairing):
-        for i in range(len(engines)):
-            for j in range(i + 1, len(engines)):
-                engine1 = engines[i]
-                engine2 = engines[j]
-                
+
+    for i in range(len(engines)):
+        for j in range(i + 1, len(engines)):
+            engine1 = engines[i]
+            engine2 = engines[j]
+            
+            for _ in range(num_pairs_per_pairing):
                 outcome = simulate_match(probabilities, engine1, engine2)
                 update_results(sim_results, engine1, engine2, outcome)
-    
+                
     return sim_results
 
 def update_results(results, engine1, engine2, outcome):
@@ -159,7 +159,7 @@ def update_results(results, engine1, engine2, outcome):
         results[engine2][engine1] = (results[engine2][engine1][0] + 1, results[engine2][engine1][1], results[engine2][engine1][2], results[engine2][engine1][3], results[engine2][engine1][4])
     else:
         raise ValueError("Result must be 'LL', 'LD', 'WLDD', 'WD', or 'WW'")
-    
+        
 def update_pentanomial(results, engine1, engine2, pentanomial):
     results[engine1][engine2] = tuple(pentanomial)
     results[engine2][engine1] = tuple(pentanomial[::-1])
@@ -251,20 +251,26 @@ def ratings_dict_to_array(ratings_dict, engines):
 def ratings_array_to_dict(ratings_array, engines):
     """ Convert a NumPy array of Elo ratings back to a dictionary. """
     return {engine: rating for engine, rating in zip(engines, ratings_array)}
-
+    
 def objective_function(ratings_array, engines, score_matrix):
-    """ Calculate the objective function (sum of squared errors) for the given Elo ratings. """
-    ratings = ratings_array.reshape(len(engines), 1)
-    total_error = 0
-    for i in range(len(engines)):
-        for j in range(len(engines)):
-            if i != j:
-                predicted_score = elo_probability(ratings[i], ratings[j])
-                actual_score = score_matrix[i, j]
-                
-                # ignore perfect wins and losses as they're infinite elo, making the simulation hard to converge (same as ordo)
-                if actual_score != 0 and actual_score != 1:
-                    total_error += (predicted_score - actual_score) ** 2
+    num_engines = len(engines)
+    ratings = ratings_array.reshape(num_engines, 1)
+    
+    # Compute the difference matrix
+    rating_diff = ratings.T - ratings
+    
+    # Compute the predicted scores matrix
+    predicted_scores = 1 / (1 + 10 ** (rating_diff / 400))
+    
+    # Compute the squared errors matrix
+    squared_errors = (predicted_scores - score_matrix) ** 2
+    
+    # Create a mask to exclude perfect scores
+    mask = (score_matrix != 0) & (score_matrix != 1) & (np.eye(num_engines) == 0)
+    
+    # Sum the squared errors where mask is True
+    total_error = np.sum(squared_errors[mask])
+    
     return total_error
 
 def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean, anchor_engine):
