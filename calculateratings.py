@@ -1,5 +1,5 @@
 import chess.pgn
-from collections import defaultdict, deque
+from collections import defaultdict, deque, Counter
 from scipy.optimize import minimize
 import subprocess
 import os
@@ -8,6 +8,7 @@ import io
 import numpy as np
 import argparse
 import time
+
 
 did_not_converge = False
 
@@ -133,7 +134,7 @@ def calculate_probabilities(results):
 
 def simulate_tournament(probabilities, engines, num_pairs_per_pairing, rng):
     sim_results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
-
+    
     for i in range(len(engines)):
         for j in range(i + 1, len(engines)):
             engine1 = engines[i]
@@ -143,23 +144,24 @@ def simulate_tournament(probabilities, engines, num_pairs_per_pairing, rng):
                 
     return sim_results
 
-def update_results_batch(results, engine1, engine2, outcomes):
+def update_results_batch(results, engine1, engine2, outcomes): 
     # Count occurrences of each outcome
-    outcome_counts = {
-        'LL': outcomes.count('LL'),
-        'LD': outcomes.count('LD'),
-        'WLDD': outcomes.count('WLDD'),
-        'WD': outcomes.count('WD'),
-        'WW': outcomes.count('WW')
-    }
+    outcome_counts = Counter(outcomes)
+    
+    # Extract counts with a default of 0 if the outcome is not present
+    LL_count = outcome_counts.get('LL', 0)
+    LD_count = outcome_counts.get('LD', 0)
+    WLDD_count = outcome_counts.get('WLDD', 0)
+    WD_count = outcome_counts.get('WD', 0)
+    WW_count = outcome_counts.get('WW', 0)
     
     # Update the results for engine1 vs engine2
     results[engine1][engine2] = (
-        results[engine1][engine2][0] + outcome_counts['LL'],
-        results[engine1][engine2][1] + outcome_counts['LD'],
-        results[engine1][engine2][2] + outcome_counts['WLDD'],
-        results[engine1][engine2][3] + outcome_counts['WD'],
-        results[engine1][engine2][4] + outcome_counts['WW']
+        results[engine1][engine2][0] + LL_count,
+        results[engine1][engine2][1] + LD_count,
+        results[engine1][engine2][2] + WLDD_count,
+        results[engine1][engine2][3] + WD_count,
+        results[engine1][engine2][4] + WW_count
     )
     
     # Mirror the result for engine2 vs engine1
@@ -429,4 +431,3 @@ format_ratings_result(ratings_with_error_bars)
 print(f"Total Simulation time: {elapsed_time:.4f} seconds")
 if did_not_converge == True:
     print("Warning: optimization did not converge properly")
-
