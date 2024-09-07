@@ -115,8 +115,10 @@ def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng
     prob = probabilities[engine1][engine2]
     
     # Simulate matches
-    outcomes_indices = rng.choice(5, size=num_pairs_per_pairing, p=prob)
-    results = [outcomes[index] for index in outcomes_indices]
+    results = []
+    if num_pairs_per_pairing > 0:
+        outcomes_indices = rng.choice(5, size=num_pairs_per_pairing, p=prob)
+        results = [outcomes[index] for index in outcomes_indices]
     
     return results
     
@@ -130,7 +132,9 @@ def calculate_probabilities(results):
             total_pairs = LL + LD + WLDD + WD + WW
             if total_pairs == 0:
                 print(f"Warning: No pairs played between {engine1} and {engine2}")
-            probabilities[engine1][engine2] = (LL / total_pairs, LD / total_pairs, WLDD / total_pairs, WD / total_pairs, WW / total_pairs)
+                probabilities[engine1][engine2] = 0
+            else:
+                probabilities[engine1][engine2] = (LL / total_pairs, LD / total_pairs, WLDD / total_pairs, WD / total_pairs, WW / total_pairs)
             
     return probabilities
 
@@ -230,7 +234,10 @@ def calculate_expected_scores(results):
         for engine2 in results[engine1]:
             LL, LD, WLDD, WD, WW = results[engine1][engine2]
             total_pairs = LL + LD + WLDD + WD + WW
-            scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+            if total_pairs == 0:
+                scores[engine1][engine2] = 0
+            else:
+                scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
     
     return scores
     
@@ -358,10 +365,12 @@ parser.add_argument('--rngseed', type=int, default=42)
 args = parser.parse_args()
 rng = np.random.default_rng(args.rngseed)
 
-#engines = ['AlphaZero', 'Stockfish', 'Leela']
-#update_pentanomial(results, 'AlphaZero', 'Stockfish', [24, 1, 28, 12, 35])
-#update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
-#update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
+# engines = ['AlphaZero', 'Stockfish', 'Leela']
+# results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
+# update_pentanomial(results, 'AlphaZero', 'Stockfish', [24, 1, 28, 12, 35])
+# update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
+# update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
+
 print("Parsing PGN... please wait...")
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname, args.pgnfile)
@@ -412,3 +421,4 @@ print(f"Total Simulation time: {elapsed_time:.4f} seconds")
 if did_not_converge == True:
     print("Warning: optimization did not converge properly in one of the simulations")
 
+ 
