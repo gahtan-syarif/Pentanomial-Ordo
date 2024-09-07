@@ -139,11 +139,38 @@ def simulate_tournament(probabilities, engines, num_pairs_per_pairing, rng):
             engine1 = engines[i]
             engine2 = engines[j]
             outcomes = simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing,rng)
-            for outcome in outcomes:
-                update_results(sim_results, engine1, engine2, outcome)
+            update_results_batch(sim_results, engine1, engine2, outcomes)
                 
     return sim_results
 
+def update_results_batch(results, engine1, engine2, outcomes):
+    # Count occurrences of each outcome
+    outcome_counts = {
+        'LL': outcomes.count('LL'),
+        'LD': outcomes.count('LD'),
+        'WLDD': outcomes.count('WLDD'),
+        'WD': outcomes.count('WD'),
+        'WW': outcomes.count('WW')
+    }
+    
+    # Update the results for engine1 vs engine2
+    results[engine1][engine2] = (
+        results[engine1][engine2][0] + outcome_counts['LL'],
+        results[engine1][engine2][1] + outcome_counts['LD'],
+        results[engine1][engine2][2] + outcome_counts['WLDD'],
+        results[engine1][engine2][3] + outcome_counts['WD'],
+        results[engine1][engine2][4] + outcome_counts['WW']
+    )
+    
+    # Mirror the result for engine2 vs engine1
+    results[engine2][engine1] = (
+        results[engine1][engine2][4],
+        results[engine1][engine2][3],
+        results[engine1][engine2][2],
+        results[engine1][engine2][1],
+        results[engine1][engine2][0]
+    )
+    
 def update_results(results, engine1, engine2, outcome):
     if outcome == 'LL':
         results[engine1][engine2] = (results[engine1][engine2][0] + 1, results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
