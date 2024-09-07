@@ -282,7 +282,7 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
         args=(engines, score_matrix),
         method='L-BFGS-B',
         bounds=[(0, None)] * num_engines,
-        options={'gtol': 1e-12}  # Increased precision
+        options={'gtol': 1e-9}  # Increased precision
     )
     # Check if the result converged
     global did_not_converge
