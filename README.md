@@ -2,7 +2,7 @@ Python script that calculates elo ratings of chess engines in a roundrobin tourn
 How to use:
 - Place the script inside a folder with the pgn file.
 - Run the command: `python calculateratings.py --pgnfile NAME --simulations NUM`
-- Example command: `python calculateratings.py --pgnfile tournament.pgn`
+- Example command: `python calculateratings.py --pgnfile tournament.pgn --simulations 1000`
 - To set the seed for the random number generator, you can add `--rngseed SEED` with the default seed being 42.
 - To set the average rating for the pool, use the argument `--average AVG` with the default being 2300.
 - If you want to set an anchor engine, use the argument `--anchor ENGINE`.
