@@ -525,12 +525,14 @@ def reorder_pgn_by_pairs_with_rounds_nomoves_faster(pgn_file_path, output_file_p
             output_file.write(export_headers_with_result(game))
             output_file.write(f"{result}\n")
             output_file.write("\n")
-
+            
 parser = argparse.ArgumentParser()
 parser.add_argument('--pgnfile', type=str, required=True)
 parser.add_argument('--simulations', type=int, default=1000)
 parser.add_argument('--ordoargs', type=str, default="")
+parser.add_argument('--rngseed', type=int, default=42)
 args = parser.parse_args()
+random.seed(args.rngseed)
 
 #engines = ['AlphaZero', 'Stockfish', 'Leela']
 dirname = os.path.dirname(__file__)
@@ -543,6 +545,7 @@ filename = os.path.join(dirname, args.pgnfile)
 mean_rating = process_pgn_with_ordo(filename, args.ordoargs)
 print("Parsing PGN... please wait...")
 rounds, engines = parse_pgn(filename)
+engines.sort()
 print("Finished parsing PGN, proceeding to calculate results...")
 # os.remove(os.path.join(dirname, 'processed_pgn.pgn'))
 results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
