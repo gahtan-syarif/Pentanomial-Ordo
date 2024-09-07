@@ -1,4 +1,3 @@
-import random
 import chess.pgn
 from collections import defaultdict, deque
 from scipy.optimize import minimize
@@ -100,10 +99,25 @@ def update_game_pairs_pgn(results, rounds):
             elif result1 == '0-1' and result2 == '1-0':
                 results[engine1][engine2] = (results[engine1][engine2][0] + 1, results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
 
-def simulate_match(probabilities, engine1, engine2):
-    LL_prob, LD_prob, WLDD_prob, WD_prob, WW_prob = probabilities[engine1][engine2]
-    outcome = random.choices(['LL', 'LD', 'WLDD', 'WD', 'WW'], [LL_prob, LD_prob, WLDD_prob, WD_prob, WW_prob])[0]
-    return outcome
+def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng):
+    """
+    Simulate matches for a specific pair of engines using a local random state.
+
+    :param probabilities: A dictionary with probabilities for each pair.
+    :param engine1: The first engine in the pair.
+    :param engine2: The second engine in the pair.
+    :param num_pairs_per_pairing: Number of simulations to run for the pair.
+    :param seed: Optional seed for reproducibility.
+    :return: List of outcomes for all simulations.
+    """
+    outcomes = ['LL', 'LD', 'WLDD', 'WD', 'WW']
+    prob = probabilities[engine1][engine2]
+    
+    # Simulate matches
+    outcomes_indices = rng.choice(5, size=num_pairs_per_pairing, p=prob)
+    results = [outcomes[index] for index in outcomes_indices]
+    
+    return results
     
 def calculate_probabilities(results):
     probabilities = {}
@@ -113,30 +127,19 @@ def calculate_probabilities(results):
         for engine2 in results[engine1]:
             LL, LD, WLDD, WD, WW = results[engine1][engine2]
             total_pairs = LL + LD + WLDD + WD + WW
+            probabilities[engine1][engine2] = (LL / total_pairs, LD / total_pairs, WLDD / total_pairs, WD / total_pairs, WW / total_pairs)
             
-            if total_pairs == 0:
-                # If no games have been played between these engines, assume equal probability
-                probabilities[engine1][engine2] = (1/5, 1/5, 1/5, 1/5, 1/5)
-            else:
-                LL_prob = LL / total_pairs
-                LD_prob = LD / total_pairs
-                WLDD_prob = WLDD / total_pairs
-                WD_prob = WD / total_pairs
-                WW_prob = WW / total_pairs
-                probabilities[engine1][engine2] = (LL_prob, LD_prob, WLDD_prob, WD_prob, WW_prob)
-    
     return probabilities
 
-def simulate_tournament(probabilities, engines, num_pairs_per_pairing):
+def simulate_tournament(probabilities, engines, num_pairs_per_pairing, rng):
     sim_results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
 
     for i in range(len(engines)):
         for j in range(i + 1, len(engines)):
             engine1 = engines[i]
             engine2 = engines[j]
-            
-            for _ in range(num_pairs_per_pairing):
-                outcome = simulate_match(probabilities, engine1, engine2)
+            outcomes = simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing,rng)
+            for outcome in outcomes:
                 update_results(sim_results, engine1, engine2, outcome)
                 
     return sim_results
@@ -213,12 +216,7 @@ def calculate_expected_scores(results):
         for engine2 in results[engine1]:
             LL, LD, WLDD, WD, WW = results[engine1][engine2]
             total_pairs = LL + LD + WLDD + WD + WW
-            
-            if total_pairs == 0:
-                # If no games have been played between these engines, assume 0.5
-                scores[engine1][engine2] = 0.5
-            else:
-                scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+            scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
     
     return scores
     
@@ -348,7 +346,7 @@ parser.add_argument('--average', type=float, default=2300)
 parser.add_argument('--anchor', type=str, default="")
 parser.add_argument('--rngseed', type=int, default=42)
 args = parser.parse_args()
-random.seed(args.rngseed)
+rng = np.random.default_rng(args.rngseed)
 
 #engines = ['AlphaZero', 'Stockfish', 'Leela']
 #update_pentanomial(results, 'AlphaZero', 'Stockfish', [24, 1, 28, 12, 35])
@@ -377,7 +375,7 @@ simulated_ratings = {}
 print("Starting simulation...")
 start_time = time.time()
 for i in range(num_simulations): # 1000 is the typical minimum number of bootstrap samples, but the more the better
-    simulated_results = simulate_tournament(probabilities, engines, num_pairs_per_pairing)
+    simulated_results = simulate_tournament(probabilities, engines, num_pairs_per_pairing, rng)
     simulated_scores = calculate_expected_scores(simulated_results)
     
     simulated_ratings[i] = optimize_elo_ratings(engines, simulated_scores, initial_ratings, args.average, args.anchor)
@@ -404,3 +402,4 @@ format_ratings_result(ratings_with_error_bars)
 print(f"Total Simulation time: {elapsed_time:.4f} seconds")
 if did_not_converge == True:
     print("Warning: optimization did not converge properly")
+
