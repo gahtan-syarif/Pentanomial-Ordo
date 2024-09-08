@@ -8,6 +8,7 @@ import numpy as np
 import argparse
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
 
 def calculate_percentile_intervals(engine_ratings, percentile=95):
     """
@@ -384,9 +385,8 @@ def main():
     # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
     
     print("Parsing PGN... please wait...")
-    dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, args.pgnfile)
-    rounds, engines = parse_pgn(filename)
+    filepath = Path(args.pgnfile).resolve()
+    rounds, engines = parse_pgn(filepath)
     engines.sort()
     print("Finished parsing PGN, proceeding to calculate results...")
     results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
@@ -441,4 +441,3 @@ def main():
 if __name__ == "__main__":
     main()
 
- 
