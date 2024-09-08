@@ -1,4 +1,3 @@
-import chess.pgn
 from collections import defaultdict, deque, Counter
 from scipy.optimize import minimize
 import subprocess
@@ -46,25 +45,32 @@ def parse_pgn(pgn_file_path):
     engines = set()
     
     with open(pgn_file_path, 'r') as pgn_file:
-        while True:
-            pgn = chess.pgn.read_game(pgn_file)
-            if pgn is None:
-                break
-            round_tag = pgn.headers.get('Round', 'Unknown')
-            white_engine = pgn.headers.get('White', 'Unknown')
-            black_engine = pgn.headers.get('Black', 'Unknown')
-            result = pgn.headers.get('Result', 'Unknown')
-
-            rounds[round_tag].append({
-                'white': white_engine,
-                'black': black_engine,
-                'result': result
-            })
-            engines.add(white_engine)
-            engines.add(black_engine)
+        game_data = pgn_file.read()
+    
+    # Regex to extract game headers and results
+    game_pattern = re.compile(
+        r'\[Round\s+"([^"]*)"\]\s*'
+        r'\[White\s+"([^"]*)"\]\s*'
+        r'\[Black\s+"([^"]*)"\]\s*'
+        r'\[Result\s+"([^"]*)"\]',
+        re.MULTILINE | re.DOTALL
+    )
+    
+    # Find all matches in the PGN data
+    matches = game_pattern.findall(game_data)
+    
+    for match in matches:
+        round_tag, white_engine, black_engine, result = match
+        rounds[round_tag].append({
+            'white': white_engine,
+            'black': black_engine,
+            'result': result
+        })
+        engines.add(white_engine)
+        engines.add(black_engine)
     
     return rounds, list(engines)
-
+    
 def update_game_pairs_pgn(results, rounds):
     """
     Update the count of games played between each pair of engines based on games within the same round.
