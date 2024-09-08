@@ -67,7 +67,7 @@ def parse_pgn(pgn_file_path):
         engines.add(white_engine)
         engines.add(black_engine)
     
-    return rounds, list(engines)
+    return rounds, engines
     
 def update_game_pairs_pgn(results, rounds):
     """
@@ -369,7 +369,7 @@ def run_simulation(i, probabilities, engines, seed, results, initial_ratings, av
     
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pgnfile', type=str, required=True)
+    parser.add_argument('--pgnfile', type=str, nargs='+', required=True)
     parser.add_argument('--simulations', type=int, default=1000)
     parser.add_argument('--average', type=float, default=2300)
     parser.add_argument('--anchor', type=str, default="")
@@ -385,12 +385,19 @@ def main():
     # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
     
     print("Parsing PGN... please wait...")
-    filepath = Path(args.pgnfile).resolve()
-    rounds, engines = parse_pgn(filepath)
+    individual_rounds = []
+    engines_set = set()
+    for pgnfile in args.pgnfile:
+        filepath = Path(pgnfile).resolve()
+        file_rounds, file_engines = parse_pgn(filepath)
+        engines_set.update(file_engines)
+        individual_rounds.append(file_rounds)
+    engines = list(engines_set)
     engines.sort()
-    print("Finished parsing PGN, proceeding to calculate results...")
     results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
-    update_game_pairs_pgn(results, rounds)
+    for rounds in individual_rounds:
+        update_game_pairs_pgn(results, rounds)
+    print("Finished parsing PGN, proceeding to calculate results...")
 
 
     # Calculate probabilities
