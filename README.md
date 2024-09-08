@@ -1,4 +1,4 @@
-Python script that calculates elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo).
+Python script that calculates pentanomial elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo).
 How to use:
 - Place the script inside a folder with the pgn file.
 - Required python dependencies: scipy
