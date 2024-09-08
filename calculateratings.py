@@ -9,9 +9,6 @@ import argparse
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-did_not_converge = False
-did_not_converge_counter = 0
-
 def calculate_percentile_intervals(engine_ratings, percentile=95):
     """
     Calculate the percentile-based confidence intervals for the ratings of each engine based on multiple simulations.
@@ -309,11 +306,8 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
         options={'gtol': 1e-8}  # Increased precision
     )
     # Check if the result converged
-    global did_not_converge
-    global did_not_converge_counter
     if not result.success:
-        did_not_converge = True
-        did_not_converge_counter += 1
+        print("Warning: one of the simulations did not converge properly")
     optimized_ratings_array = result.x
     
     # Convert optimized ratings array back to dictionary
@@ -379,14 +373,16 @@ def main():
     parser.add_argument('--average', type=float, default=2300)
     parser.add_argument('--anchor', type=str, default="")
     parser.add_argument('--rngseed', type=int, default=42)
+    parser.add_argument('--concurrency', type=int, default=os.cpu_count())
     args = parser.parse_args()
-
+    script_start_time = time.time()
+    
     # engines = ['AlphaZero', 'Stockfish', 'Leela']
     # results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
     # update_pentanomial(results, 'AlphaZero', 'Stockfish', [24, 1, 28, 12, 35])
     # update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
     # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
-
+    
     print("Parsing PGN... please wait...")
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, args.pgnfile)
@@ -407,8 +403,8 @@ def main():
     num_simulations = args.simulations
     simulated_ratings = {}
     print("Starting simulation...")
-    start_time = time.time()
-    with ProcessPoolExecutor() as executor:
+    simulation_start_time = time.time()
+    with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
         futures = [
             executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, initial_ratings, args.average, args.anchor)
@@ -418,8 +414,8 @@ def main():
             i, rating = future.result()
             simulated_ratings[i] = rating
             # print(f"Finished simulation {i+1} out of {num_simulations}")
-    end_time = time.time()
-    elapsed_time = end_time - start_time
+    simulation_end_time = time.time()
+    simulation_elapsed_time = simulation_end_time - simulation_start_time
 
     print("Calculating confidence intervals...")
     confidence_intervals = calculate_percentile_intervals(simulated_ratings)
@@ -437,9 +433,10 @@ def main():
     #print final ratings with confidence intervals
     ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
     format_ratings_result(ratings_with_error_bars)
-    print(f"Total Simulation time: {elapsed_time:.4f} seconds")
-    if did_not_converge == True:
-        print(f"Warning: optimization did not converge properly in {did_not_converge_counter} of the simulations")
+    script_end_time = time.time()
+    script_elapsed_time = script_end_time - script_start_time
+    print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
+    print(f"Total elapsed time: {script_elapsed_time:.4f} seconds")
         
 if __name__ == "__main__":
     main()
