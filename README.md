@@ -1,6 +1,5 @@
 Python script that calculates pentanomial elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo).
 How to use:
-- Place the script inside a folder with the pgn file.
 - Required python dependencies: scipy
 - Run the command: `python calculateratings.py --pgnfile FILENAME`
 - To set the number of simulations, add `--simulations NUM` with the default being 1000.
