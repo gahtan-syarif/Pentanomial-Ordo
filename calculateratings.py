@@ -34,7 +34,7 @@ def calculate_percentile_intervals(engine_ratings, percentile=95):
         lower_bound = np.percentile(ratings, (100 - percentile) / 2)
         upper_bound = np.percentile(ratings, 100 - (100 - percentile) / 2)
         #mean_rating = np.mean(ratings)
-        percentile_intervals[engine] = (round(lower_bound, 1), round(upper_bound, 1))
+        percentile_intervals[engine] = (lower_bound, upper_bound)
     
     return percentile_intervals
 
