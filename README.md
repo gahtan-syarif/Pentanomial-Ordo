@@ -9,4 +9,4 @@ How to use:
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
 - For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error bar becomes.
 - This script only works for tournaments where games are played in pairs where each player swaps colors.
-- PGNs must be correctly formatted where every unique gamepair has a unique "Round" PGN header tag. So for example if a PGN has 100 games then the "Round" tag must be incremented from 1 to 50 for every gamepair.
+- Each PGN must be correctly formatted where every unique gamepair within that PGN must have a unique "Round" PGN header tag. So for example if a PGN has 100 games then the "Round" tag must be incremented from 1 to 50 for every gamepair.
