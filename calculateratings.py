@@ -7,7 +7,7 @@ import io
 import numpy as np
 import argparse
 import time
-
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 did_not_converge = False
 did_not_converge_counter = 0
@@ -365,68 +365,83 @@ def normalize_ratings_with_anchor(ratings_dict, anchor_engine, anchor_rating):
 
     return normalized_ratings_dict
     
-parser = argparse.ArgumentParser()
-parser.add_argument('--pgnfile', type=str, required=True)
-parser.add_argument('--simulations', type=int, default=1000)
-parser.add_argument('--average', type=float, default=2300)
-parser.add_argument('--anchor', type=str, default="")
-parser.add_argument('--rngseed', type=int, default=42)
-args = parser.parse_args()
-rng = np.random.default_rng(args.rngseed)
-
-# engines = ['AlphaZero', 'Stockfish', 'Leela']
-# results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
-# update_pentanomial(results, 'AlphaZero', 'Stockfish', [24, 1, 28, 12, 35])
-# update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
-# update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
-
-print("Parsing PGN... please wait...")
-dirname = os.path.dirname(__file__)
-filename = os.path.join(dirname, args.pgnfile)
-rounds, engines = parse_pgn(filename)
-engines.sort()
-print("Finished parsing PGN, proceeding to calculate results...")
-results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
-update_game_pairs_pgn(results, rounds)
-
-
-# Calculate probabilities
-initial_ratings = set_initial_ratings(engines, 0)
-scores = calculate_expected_scores(results)
-mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
-probabilities = calculate_probabilities(results)
-
-# Simulate the tournament
-num_simulations = args.simulations
-simulated_ratings = {}
-print("Starting simulation...")
-start_time = time.time()
-for i in range(num_simulations): # 1000 is the typical minimum number of bootstrap samples, but the more the better
+def run_simulation(i, probabilities, engines, seed, results, initial_ratings, average, anchor):
+    # Each process gets its own RNG with a different seed
+    rng = np.random.default_rng(seed + i)
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results)
+    return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor)
     
-    simulated_ratings[i] = optimize_elo_ratings(engines, simulated_scores, initial_ratings, args.average, args.anchor)
-    print(f"Finished simulation {i+1} out of {num_simulations}")
-end_time = time.time()
-elapsed_time = end_time - start_time
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pgnfile', type=str, required=True)
+    parser.add_argument('--simulations', type=int, default=1000)
+    parser.add_argument('--average', type=float, default=2300)
+    parser.add_argument('--anchor', type=str, default="")
+    parser.add_argument('--rngseed', type=int, default=42)
+    args = parser.parse_args()
 
-print("Calculating confidence intervals...")
-confidence_intervals = calculate_percentile_intervals(simulated_ratings)
+    # engines = ['AlphaZero', 'Stockfish', 'Leela']
+    # results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
+    # update_pentanomial(results, 'AlphaZero', 'Stockfish', [24, 1, 28, 12, 35])
+    # update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
+    # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
 
-print("Finalizing results...")
-#combine the two dicts
-ratings_with_error_bars = {}
-for engine in mean_rating:
-    mean = mean_rating[engine]
-    if engine in confidence_intervals:
-        lower_bound, upper_bound = confidence_intervals[engine]
-        ratings_with_error_bars[engine] = (mean, lower_bound, upper_bound)
+    print("Parsing PGN... please wait...")
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, args.pgnfile)
+    rounds, engines = parse_pgn(filename)
+    engines.sort()
+    print("Finished parsing PGN, proceeding to calculate results...")
+    results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
+    update_game_pairs_pgn(results, rounds)
 
-print("Sorting results...")
-#print final ratings with confidence intervals
-ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
-format_ratings_result(ratings_with_error_bars)
-print(f"Total Simulation time: {elapsed_time:.4f} seconds")
-if did_not_converge == True:
-    print(f"Warning: optimization did not converge properly in {did_not_converge_counter} of the simulations")
 
+    # Calculate probabilities
+    initial_ratings = set_initial_ratings(engines, 0)
+    scores = calculate_expected_scores(results)
+    mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
+    probabilities = calculate_probabilities(results)
+
+    # Simulate the tournament
+    num_simulations = args.simulations
+    simulated_ratings = {}
+    print("Starting simulation...")
+    start_time = time.time()
+    with ProcessPoolExecutor() as executor:
+        # Pass a different seed to each process
+        futures = [
+            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, initial_ratings, args.average, args.anchor)
+            for i in range(num_simulations)
+        ]
+        for future in as_completed(futures):
+            i, rating = future.result()
+            simulated_ratings[i] = rating
+            # print(f"Finished simulation {i+1} out of {num_simulations}")
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    print("Calculating confidence intervals...")
+    confidence_intervals = calculate_percentile_intervals(simulated_ratings)
+
+    print("Finalizing results...")
+    #combine the two dicts
+    ratings_with_error_bars = {}
+    for engine in mean_rating:
+        mean = mean_rating[engine]
+        if engine in confidence_intervals:
+            lower_bound, upper_bound = confidence_intervals[engine]
+            ratings_with_error_bars[engine] = (mean, lower_bound, upper_bound)
+
+    print("Sorting results...")
+    #print final ratings with confidence intervals
+    ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
+    format_ratings_result(ratings_with_error_bars)
+    print(f"Total Simulation time: {elapsed_time:.4f} seconds")
+    if did_not_converge == True:
+        print(f"Warning: optimization did not converge properly in {did_not_converge_counter} of the simulations")
+        
+if __name__ == "__main__":
+    main()
+
+ 
