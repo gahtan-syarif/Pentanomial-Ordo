@@ -11,6 +11,7 @@ import time
 
 
 did_not_converge = False
+did_not_converge_counter = 0
 
 def calculate_percentile_intervals(engine_ratings, percentile=95):
     """
@@ -131,7 +132,7 @@ def calculate_probabilities(results):
             LL, LD, WLDD, WD, WW = results[engine1][engine2]
             total_pairs = LL + LD + WLDD + WD + WW
             if total_pairs == 0:
-                print(f"Warning: No pairs played between {engine1} and {engine2}")
+                # print(f"Warning: No pairs played between {engine1} and {engine2}")
                 probabilities[engine1][engine2] = 0
             else:
                 probabilities[engine1][engine2] = (LL / total_pairs, LD / total_pairs, WLDD / total_pairs, WD / total_pairs, WW / total_pairs)
@@ -281,7 +282,7 @@ def objective_function(ratings_array, engines, score_matrix):
     squared_errors = (predicted_scores - score_matrix) ** 2
     
     # Create a mask to exclude perfect scores
-    mask = (score_matrix != 0) & (score_matrix != 1) & (np.eye(num_engines) == 0)
+    mask = (score_matrix != 0) & (score_matrix != 1)
     
     # Sum the squared errors where mask is True
     total_error = np.sum(squared_errors[mask])
@@ -303,8 +304,10 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
     )
     # Check if the result converged
     global did_not_converge
+    global did_not_converge_counter
     if not result.success:
         did_not_converge = True
+        did_not_converge_counter += 1
     optimized_ratings_array = result.x
     
     # Convert optimized ratings array back to dictionary
@@ -419,6 +422,5 @@ ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
 format_ratings_result(ratings_with_error_bars)
 print(f"Total Simulation time: {elapsed_time:.4f} seconds")
 if did_not_converge == True:
-    print("Warning: optimization did not converge properly in one of the simulations")
+    print(f"Warning: optimization did not converge properly in {did_not_converge_counter} of the simulations")
 
- 
