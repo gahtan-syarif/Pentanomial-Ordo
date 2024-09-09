@@ -190,15 +190,23 @@ def update_pentanomial(results, engine1, engine2, pentanomial):
     results[engine1][engine2] = tuple(pentanomial)
     results[engine2][engine1] = tuple(pentanomial[::-1])
 
-def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, filename):
+def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, filename):
+    pairs_played = {}
+    points = {}
+    for engine, pentanomial in summed_results.items():
+        LL, LD, WLDD, WD, WW = pentanomial
+        pairs_played[engine] = LL + LD + WLDD + WD + WW
+        points[engine] = 2 * (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW)
+        
     # Determine the maximum width for each column
     max_engine_length = max(len(engine) for engine in ratings_with_error_bars.keys())
     max_mean_length = max(len(f"{mean_rating:.1f}") for mean_rating, _, _ in ratings_with_error_bars.values())
     max_error_length = max(len(f"{round(mean_rating-lower_bound, 1):.1f}") for mean_rating, lower_bound, _ in ratings_with_error_bars.values())
     max_plus_error_length = max(len(f"{round(upper_bound-mean_rating, 1):.1f}") for mean_rating, _, upper_bound in ratings_with_error_bars.values())
-    max_interval_length = max(len(f"[{lower_bound:.1f}, {upper_bound:.1f}]") for _, lower_bound, upper_bound in ratings_with_error_bars.values())
     penta_stats_length = max(len(penta_string) for penta_string in penta_stats.values())
     performance_stats_length = max(len(performance_string) for performance_string in performance_stats.values())
+    points_length = max(max(len(f"{individual_points:.1f}") for individual_points in points.values()), len("POINTS"))
+    pairs_length = max(max(len(f"{individual_pairs_played}") for individual_pairs_played in pairs_played.values()), len("PAIRS"))
     
     def output_line(line):
         print(line)
@@ -215,15 +223,16 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
     headers = [
         "NAME", 
         "ELO", 
-        "ERROR", 
-        "CI95%", 
+        "ERROR",
         "PENTA", 
+        "POINTS",
+        "PAIRS",
         "(%)"
     ]
     
-    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
-    output_line(f"{headers[0]:^{max_engine_length}}  {headers[1]:^{max_mean_length}} {headers[2]:^{max_error_length + max_plus_error_length + 5}} {headers[3]:^{max_interval_length}} {headers[4]:^{penta_stats_length}} {headers[5]:^{performance_stats_length}}")
-    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
+    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 12))
+    output_line(f"{headers[0]:^{max_engine_length}}  {headers[1]:^{max_mean_length}} {headers[2]:^{max_error_length + max_plus_error_length + 5}} {headers[3]:^{penta_stats_length}} {headers[4]:^{points_length}} {headers[5]:^{pairs_length}} {headers[6]:^{performance_stats_length}}")
+    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 12))
     # Print each engine's ratings with formatted errors and confidence intervals
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
         error_down = round(lower_bound - mean_rating, 1)
@@ -232,9 +241,11 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
         error_down_str = f"{error_down:.1f}"
         error_up_str = f"{error_up:.1f}"
         interval_str = f"[{lower_bound:.1f}, {upper_bound:.1f}]"
+        pairs_str = f"{pairs_played[engine]}"
+        points_str = f"{points[engine]:.1f}"
 
-        output_line(f"{engine:<{max_engine_length}}: {mean_rating_str:<{max_mean_length}} ({error_down_str:<{max_error_length}}/+{error_up_str:<{max_plus_error_length}}) {interval_str:<{max_interval_length}} {penta_stats[engine]:<{penta_stats_length}} {performance_stats[engine]:>{performance_stats_length}}")
-    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
+        output_line(f"{engine:<{max_engine_length}}: {mean_rating_str:<{max_mean_length}} ({error_down_str:<{max_error_length}}/+{error_up_str:<{max_plus_error_length}}) {penta_stats[engine]:<{penta_stats_length}} {points_str:<{points_length}} {pairs_str:<{pairs_length}} {performance_stats[engine]:>{performance_stats_length}}")
+    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 12))
 
 def sort_engines_by_mean(ratings_with_error_bars):
     """
@@ -497,7 +508,7 @@ def main():
     #print final ratings with confidence intervals
     ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
     penta_stats, performance_stats = format_penta_stats(summed_results)
-    format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, args.output)
+    format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output)
     script_end_time = time.time()
     script_elapsed_time = script_end_time - script_start_time
     print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
