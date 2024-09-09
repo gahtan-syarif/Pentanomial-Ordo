@@ -245,14 +245,6 @@ def calculate_expected_scores(results):
                 scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
     
     return scores
-    
-def set_initial_ratings(engines, initial_rating):
-    initial_ratings = {}
-    
-    for engine in engines:
-        initial_ratings[engine] = initial_rating
-    
-    return initial_ratings
 
 def scores_to_matrix(engines, score_dict):
     """ Convert the score dictionary to a matrix form for optimization. """
@@ -292,7 +284,7 @@ def objective_function(ratings_array, engines, score_matrix):
     total_error = np.sum(squared_errors[mask])
     
     return total_error
-
+    
 def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean, anchor_engine):
     """ Optimize Elo ratings to minimize the discrepancy with expected scores. """
     num_engines = len(engines)
@@ -303,7 +295,6 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
         initial_ratings_array,
         args=(engines, score_matrix),
         method='L-BFGS-B',
-        bounds=[(0, None)] * num_engines,
         options={'gtol': 1e-8}  # Increased precision
     )
     # Check if the result converged
@@ -360,11 +351,45 @@ def normalize_ratings_with_anchor(ratings_dict, anchor_engine, anchor_rating):
 
     return normalized_ratings_dict
     
-def run_simulation(i, probabilities, engines, seed, results, initial_ratings, average, anchor):
+def sum_all_results(results):
+    # Create a new dictionary to store the summed results
+    summed_results = {}
+    
+    # Iterate over each engine in the results dictionary
+    for engine, opponents in results.items():
+        # Initialize a tuple to hold the sum of tuples for this engine
+        summed_tuple = (0, 0, 0, 0, 0)
+        
+        # Iterate over each opponent and sum the tuples
+        for opponent, stats in opponents.items():
+            # Use zip to add the corresponding elements of the tuples
+            summed_tuple = tuple(x + y for x, y in zip(summed_tuple, stats))
+        
+        # Store the summed tuple in the new dictionary
+        summed_results[engine] = summed_tuple
+    
+    return summed_results
+    
+def calculate_initial_ratings(results):
+    summed_results = sum_all_results(results)
+    initial_rating = {}
+    for engine, pentanomial in summed_results.items():
+        LL, LD, WLDD, WD, WW = pentanomial
+        performance = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / (LL + LD + WLDD + WD + WW)
+        if performance == 0:
+            initial_rating[engine] = -800
+        elif performance == 1:
+            initial_rating[engine] = 800
+        else:
+            initial_rating[engine] = -400 * np.log10(1 / performance - 1)
+    return initial_rating
+    
+def run_simulation(i, probabilities, engines, seed, results, average, anchor):
     # Each process gets its own RNG with a different seed
     rng = np.random.default_rng(seed + i)
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results)
+    initial_ratings = calculate_initial_ratings(simulated_results)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor)
     
 def main():
@@ -401,8 +426,8 @@ def main():
 
 
     # Calculate probabilities
-    initial_ratings = set_initial_ratings(engines, 0)
     scores = calculate_expected_scores(results)
+    initial_ratings = calculate_initial_ratings(results)
     mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
     probabilities = calculate_probabilities(results)
 
@@ -414,7 +439,7 @@ def main():
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
         futures = [
-            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, initial_ratings, args.average, args.anchor)
+            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor)
             for i in range(num_simulations)
         ]
         for future in as_completed(futures):
