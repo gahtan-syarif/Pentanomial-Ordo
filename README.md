@@ -1,6 +1,6 @@
-Python script that calculates pentanomial elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo). Ratings are calculated using an [optimization algorithm](https://en.wikipedia.org/wiki/Limited-memory_BFGS) with its error margins being calculated through non-parametric [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)).
+This is a Python script that calculates the pentanomial elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo). Ratings are calculated using an [optimization algorithm](https://en.wikipedia.org/wiki/Limited-memory_BFGS) with its error margins being calculated through non-parametric [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)).
 How to use:
-- Required python dependencies: numpy, scipy
+- Required Python dependencies: numpy, scipy
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
 - To set the number of simulations, add `--simulations NUM` with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error bar becomes.
 - To set the seed for the random number generator, you can add `--rngseed SEED` with the default seed being 42.
