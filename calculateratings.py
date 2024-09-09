@@ -213,16 +213,16 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
             
     # Define header strings
     headers = [
-        "Name", 
-        "Elo", 
-        "Error", 
-        "CI", 
-        "Penta", 
+        "NAME", 
+        "ELO", 
+        "ERROR", 
+        "CI95%", 
+        "PENTA", 
         "(%)"
     ]
     
     output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
-    output_line(f"{headers[0]:<{max_engine_length}}  {headers[1]:<{max_mean_length}} {headers[2]:<{max_error_length + max_plus_error_length}}      {headers[3]:<{max_interval_length}} {headers[4]:<{penta_stats_length}} {headers[5]:>{performance_stats_length}}")
+    output_line(f"{headers[0]:^{max_engine_length}}  {headers[1]:^{max_mean_length}} {headers[2]:^{max_error_length + max_plus_error_length + 5}} {headers[3]:^{max_interval_length}} {headers[4]:^{penta_stats_length}} {headers[5]:^{performance_stats_length}}")
     output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
     # Print each engine's ratings with formatted errors and confidence intervals
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
@@ -394,8 +394,7 @@ def sum_all_results(results):
     
     return summed_results
     
-def calculate_initial_ratings(results):
-    summed_results = sum_all_results(results)
+def calculate_initial_ratings(summed_results):
     initial_rating = {}
     for engine, pentanomial in summed_results.items():
         LL, LD, WLDD, WD, WW = pentanomial
@@ -443,7 +442,7 @@ def main():
     # update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
     # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
     
-    print("Loading PGN... please wait...")
+    print("Loading PGN...")
     individual_rounds = []
     engines_set = set()
     for pgnfile in args.pgnfile:
@@ -461,7 +460,7 @@ def main():
     # Calculate probabilities
     scores = calculate_expected_scores(results)
     summed_results = sum_all_results(results)
-    initial_ratings = calculate_initial_ratings(results)
+    initial_ratings = calculate_initial_ratings(summed_results)
     mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
     probabilities = calculate_probabilities(results)
 
