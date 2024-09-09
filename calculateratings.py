@@ -190,16 +190,40 @@ def update_pentanomial(results, engine1, engine2, pentanomial):
     results[engine1][engine2] = tuple(pentanomial)
     results[engine2][engine1] = tuple(pentanomial[::-1])
 
-def format_ratings_result(ratings_with_error_bars):
+def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, filename):
     # Determine the maximum width for each column
     max_engine_length = max(len(engine) for engine in ratings_with_error_bars.keys())
     max_mean_length = max(len(f"{mean_rating:.1f}") for mean_rating, _, _ in ratings_with_error_bars.values())
     max_error_length = max(len(f"{round(mean_rating-lower_bound, 1):.1f}") for mean_rating, lower_bound, _ in ratings_with_error_bars.values())
     max_plus_error_length = max(len(f"{round(upper_bound-mean_rating, 1):.1f}") for mean_rating, _, upper_bound in ratings_with_error_bars.values())
     max_interval_length = max(len(f"[{lower_bound:.1f}, {upper_bound:.1f}]") for _, lower_bound, upper_bound in ratings_with_error_bars.values())
-
-    print("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + 10))
-
+    penta_stats_length = max(len(penta_string) for penta_string in penta_stats.values())
+    performance_stats_length = max(len(performance_string) for performance_string in performance_stats.values())
+    
+    def output_line(line):
+        print(line)
+        if filename != "":
+            try:
+                # Resolve the path and open the file in append mode
+                with open(Path(filename).resolve(), "a") as file:
+                    file.write(line + "\n")
+            except IOError as e:
+                # Handle file I/O errors
+                print(f"Error writing to file {filename}: {e}")
+            
+    # Define header strings
+    headers = [
+        "Name", 
+        "Elo", 
+        "Error", 
+        "CI", 
+        "Penta", 
+        "(%)"
+    ]
+    
+    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
+    output_line(f"{headers[0]:<{max_engine_length}}  {headers[1]:<{max_mean_length}} {headers[2]:<{max_error_length + max_plus_error_length}}      {headers[3]:<{max_interval_length}} {headers[4]:<{penta_stats_length}} {headers[5]:>{performance_stats_length}}")
+    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
     # Print each engine's ratings with formatted errors and confidence intervals
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
         error_down = round(lower_bound - mean_rating, 1)
@@ -209,8 +233,8 @@ def format_ratings_result(ratings_with_error_bars):
         error_up_str = f"{error_up:.1f}"
         interval_str = f"[{lower_bound:.1f}, {upper_bound:.1f}]"
 
-        print(f"{engine:<{max_engine_length}}: {mean_rating_str:>{max_mean_length}} ({error_down_str:>{max_error_length}}/+{error_up_str:<{max_plus_error_length}}) {interval_str:>{max_interval_length}}")
-    print("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + 10))
+        output_line(f"{engine:<{max_engine_length}}: {mean_rating_str:<{max_mean_length}} ({error_down_str:<{max_error_length}}/+{error_up_str:<{max_plus_error_length}}) {interval_str:<{max_interval_length}} {penta_stats[engine]:<{penta_stats_length}} {performance_stats[engine]:>{performance_stats_length}}")
+    output_line("-" * (max_engine_length + max_mean_length + max_error_length + max_plus_error_length + max_interval_length + penta_stats_length + performance_stats_length + 11))
 
 def sort_engines_by_mean(ratings_with_error_bars):
     """
@@ -384,13 +408,22 @@ def calculate_initial_ratings(results):
             initial_rating[engine] = -400 * np.log10(1 / performance - 1)
     return initial_rating
     
-def run_simulation(i, probabilities, engines, seed, results, average, anchor):
+def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings):
     # Each process gets its own RNG with a different seed
     rng = np.random.default_rng(seed + i)
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results)
-    initial_ratings = calculate_initial_ratings(simulated_results)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor)
+    
+def format_penta_stats(summed_results):
+    penta_stats = {}
+    performance_stats = {}
+    for engine, pentanomial in summed_results.items():
+        LL, LD, WLDD, WD, WW = pentanomial
+        performance = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / (LL + LD + WLDD + WD + WW)
+        penta_stats[engine] = f"[{LL}, {LD}, {WLDD}, {WD}, {WW}]"
+        performance_stats[engine] = f"{round(performance * 100, 1)}%"
+    return penta_stats, performance_stats
     
 def main():
     parser = argparse.ArgumentParser()
@@ -398,6 +431,7 @@ def main():
     parser.add_argument('--simulations', type=int, default=1000)
     parser.add_argument('--average', type=float, default=2300)
     parser.add_argument('--anchor', type=str, default="")
+    parser.add_argument('--output', type=str, default="")
     parser.add_argument('--rngseed', type=int, default=42)
     parser.add_argument('--concurrency', type=int, default=os.cpu_count())
     args = parser.parse_args()
@@ -409,7 +443,7 @@ def main():
     # update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
     # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
     
-    print("Parsing PGN... please wait...")
+    print("Loading PGN... please wait...")
     individual_rounds = []
     engines_set = set()
     for pgnfile in args.pgnfile:
@@ -422,11 +456,11 @@ def main():
     results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
     for rounds in individual_rounds:
         update_game_pairs_pgn(results, rounds)
-    print("Finished parsing PGN, proceeding to calculate results...")
 
 
     # Calculate probabilities
     scores = calculate_expected_scores(results)
+    summed_results = sum_all_results(results)
     initial_ratings = calculate_initial_ratings(results)
     mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
     probabilities = calculate_probabilities(results)
@@ -434,12 +468,12 @@ def main():
     # Simulate the tournament
     num_simulations = args.simulations
     simulated_ratings = {}
-    print("Starting simulation...")
+    print("Commencing simulation...")
     simulation_start_time = time.time()
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
         futures = [
-            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor)
+            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor, initial_ratings)
             for i in range(num_simulations)
         ]
         for future in as_completed(futures):
@@ -449,7 +483,7 @@ def main():
     simulation_end_time = time.time()
     simulation_elapsed_time = simulation_end_time - simulation_start_time
 
-    print("Calculating confidence intervals...")
+    print("Calculating margin of error...")
     confidence_intervals = calculate_percentile_intervals(simulated_ratings)
 
     print("Finalizing results...")
@@ -461,10 +495,10 @@ def main():
             lower_bound, upper_bound = confidence_intervals[engine]
             ratings_with_error_bars[engine] = (mean, lower_bound, upper_bound)
 
-    print("Sorting results...")
     #print final ratings with confidence intervals
     ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
-    format_ratings_result(ratings_with_error_bars)
+    penta_stats, performance_stats = format_penta_stats(summed_results)
+    format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, args.output)
     script_end_time = time.time()
     script_elapsed_time = script_end_time - script_start_time
     print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
