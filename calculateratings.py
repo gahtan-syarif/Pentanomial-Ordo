@@ -329,6 +329,7 @@ def objective_function(ratings_array, engines, score_matrix):
     
     # Compute the predicted scores matrix
     predicted_scores = 1 / (1 + 10 ** (rating_diff / 400))
+    # predicted_scores = 1 / (1 + np.exp(1) ** (rating_diff * 0.00570633)) #ordo's model
     
     # Compute the squared errors matrix
     squared_errors = (predicted_scores - score_matrix) ** 2
