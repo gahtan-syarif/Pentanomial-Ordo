@@ -11,4 +11,4 @@ How to use:
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
-- Each PGN must be correctly formatted where every unique gamepair within that PGN must have a unique "Round" PGN header tag.
+- Each PGN must be correctly formatted where every unique gamepair between two players/engines within that PGN must have a unique "Round" PGN header tag.
