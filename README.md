@@ -1,5 +1,6 @@
 This is a Python script that calculates the pentanomial elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo). Ratings are calculated using an [optimization algorithm](https://en.wikipedia.org/wiki/Limited-memory_BFGS) with its error margins being calculated through non-parametric [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)).
 How to use:
+- This script only works for tournaments where games are played in pairs where each engine/player swaps colors.
 - Required Python dependencies: numpy, scipy
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
 - To automatically input all PGN files within a directory, use the argument `--pgndirectory DIRECTORY`.
@@ -10,5 +11,4 @@ How to use:
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
-- This script only works for tournaments where games are played in pairs where each engine/player swaps colors.
 - Each PGN must be correctly formatted where every unique gamepair within that PGN must have a unique "Round" PGN header tag. So for example if a PGN has 100 games then the "Round" tag must be incremented from 1 to 50 for every gamepair.
