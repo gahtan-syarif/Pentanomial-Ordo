@@ -37,15 +37,12 @@ def calculate_percentile_intervals(engine_ratings, percentile=95):
         percentile_intervals[engine] = (lower_bound, upper_bound)
     
     return percentile_intervals
-
+    
 def parse_pgn(pgn_file_path):
     rounds = defaultdict(list)
     engines = set()
     
-    with open(pgn_file_path, 'r') as pgn_file:
-        game_data = pgn_file.read()
-    
-    # Regex to extract game headers and results
+    # Regex pattern to extract game headers and results
     game_pattern = re.compile(
         r'\[Round\s+"([^"]*)"\]\s*'
         r'\[White\s+"([^"]*)"\]\s*'
@@ -54,19 +51,46 @@ def parse_pgn(pgn_file_path):
         re.MULTILINE | re.DOTALL
     )
     
-    # Find all matches in the PGN data
-    matches = game_pattern.findall(game_data)
+    # Use a buffer to accumulate relevant lines
+    buffer = []
     
-    for match in matches:
-        round_tag, white_engine, black_engine, result = match
-        rounds[round_tag].append({
-            'white': white_engine,
-            'black': black_engine,
-            'result': result
-        })
-        engines.add(white_engine)
-        engines.add(black_engine)
+    with open(pgn_file_path, 'r') as pgn_file:
+        for line in pgn_file:
+            if line.startswith('['):
+                buffer.append(line)
+            elif buffer:  # When encountering a non-header line, process the accumulated buffer
+                # Combine buffer lines into a single string
+                buffer_data = ''.join(buffer)
+                # Apply regex to the accumulated lines
+                matches = game_pattern.findall(buffer_data)
+                # Process matches
+                for match in matches:
+                    round_tag, white_engine, black_engine, result = match
+                    rounds[round_tag].append({
+                        'white': white_engine,
+                        'black': black_engine,
+                        'result': result
+                    })
+                    engines.add(white_engine)
+                    engines.add(black_engine)
+                # Clear the buffer
+                buffer = []
     
+    # Process any remaining lines in the buffer after finishing the file read
+    if buffer:
+        buffer_data = ''.join(buffer)
+        matches = game_pattern.findall(buffer_data)
+        for match in matches:
+            round_tag, white_engine, black_engine, result = match
+            rounds[round_tag].append({
+                'white': white_engine,
+                'black': black_engine,
+                'result': result
+            })
+            engines.add(white_engine)
+            engines.add(black_engine)
+        buffer = []
+
     return rounds, engines
     
 def update_game_pairs_pgn(results, rounds):
