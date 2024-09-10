@@ -79,19 +79,23 @@ def update_game_pairs_pgn(results, rounds):
     for round_tag, games in rounds.items():
         # Group games by the engine pair (white, black)
         round_results = defaultdict(list)
-        
         for game in games:
             white = game['white']
             black = game['black']
             result = game['result']
             
             # Store results for each game in the current round
-            if white != black:  # Ensure it's a valid pair
-                round_results[(white, black)].append(result)
+            if white == black:  # Ensure it's a valid pair
+                print("Error: PGN contains match between two players/engines with the same name")
+                exit(1)
+            round_results[(white, black)].append(result)
 
         # Process results for each engine pair
         for (engine1, engine2), results_list in round_results.items():
             results_list_opponent = round_results.get((engine2, engine1), [])
+            if len(results_list) != 1 or len(results_list_opponent) != 1:
+                print("Error: PGN 'Round' header tag is incorrectly formatted. Make sure each gamepair has a unique 'Round' header tag.")
+                exit(1)
             result1 = results_list[0]
             result2 = results_list_opponent[0]
             if result1 == '1-0' and result2 == '0-1':
