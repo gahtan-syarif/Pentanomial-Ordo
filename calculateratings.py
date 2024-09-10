@@ -148,12 +148,10 @@ def simulate_tournament(probabilities, engines, rng, results):
     
     for i in range(len(engines)):
         for j in range(i + 1, len(engines)):
-            engine1 = engines[i]
-            engine2 = engines[j]
-            LL, LD, WLDD, WD, WW = results[engine1][engine2]
+            LL, LD, WLDD, WD, WW = results[engines[i]][engines[j]]
             total_pairs = LL + LD + WLDD + WD + WW
-            outcomes = simulate_matches(probabilities, engine1, engine2, total_pairs, rng)
-            update_results_batch(sim_results, engine1, engine2, outcomes)
+            outcomes = simulate_matches(probabilities, engines[i], engines[j], total_pairs, rng)
+            update_results_batch(sim_results, engines[i], engines[j], outcomes)
                 
     return sim_results
 
