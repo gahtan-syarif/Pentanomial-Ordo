@@ -464,17 +464,44 @@ def format_penta_stats(summed_results):
         performance_stats[engine] = f"{round(performance * 100, 1)}%"
     return penta_stats, performance_stats
     
+def output_to_csv(summed_results, ratings_with_error_bars, filename):
+    def write_line(line):
+        if filename != "":
+            try:
+                # Resolve the path and open the file in append mode
+                with open(Path(filename).resolve(), "a") as file:
+                    file.write(line + "\n")
+            except IOError as e:
+                # Handle file I/O errors
+                print(f"Error writing to file {filename}: {e}")
+    LL = {}
+    LD = {}
+    WLDD = {}
+    WD = {}
+    WW = {}
+    for engine, pentanomial in summed_results.items():
+        LL[engine], LD[engine], WLDD[engine], WD[engine], WW[engine] = pentanomial
+    write_line("Rank,Name,Elo,Error_Lower,Error_Upper,LL,LD,WL_and_DD,WD,WW")
+    i=0
+    for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
+        i += 1
+        write_line(f"{i},{engine},{round(mean_rating, 1)},{round(lower_bound-mean_rating, 1)},{round(upper_bound-mean_rating,1)},{LL[engine]},{LD[engine]},{WLDD[engine]},{WD[engine]},{WW[engine]}")
+    
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pgnfile', type=str, nargs='+', required=True)
+    parser.add_argument('--pgnfile', type=str, nargs='+', default=[])
+    parser.add_argument('--pgndirectory', type=str, default="")
     parser.add_argument('--simulations', type=int, default=1000)
     parser.add_argument('--average', type=float, default=2300)
     parser.add_argument('--anchor', type=str, default="")
     parser.add_argument('--output', type=str, default="")
+    parser.add_argument('--csv', type=str, default="")
     parser.add_argument('--rngseed', type=int, default=42)
     parser.add_argument('--concurrency', type=int, default=os.cpu_count())
     args = parser.parse_args()
     script_start_time = time.time()
+    if not args.pgnfile and not args.pgndirectory:
+        parser.error("At least one of --pgnfile or --pgndirectory must be specified.")
     
     # engines = ['AlphaZero', 'Stockfish', 'Leela']
     # results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
@@ -483,9 +510,17 @@ def main():
     # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
     
     print("Loading PGN...")
+    pgnfiles = args.pgnfile.copy()
+    if args.pgndirectory:
+        pgndirectory = Path(args.pgndirectory).resolve()
+        if pgndirectory.is_dir():
+            pgnfiles.extend(pgndirectory.glob('*.pgn'))
+        else:
+            print(f"Error: {pgndirectory} is not a valid directory.")
+            exit(1)
     individual_rounds = []
     engines_set = set()
-    for pgnfile in args.pgnfile:
+    for pgnfile in pgnfiles:
         filepath = Path(pgnfile).resolve()
         file_rounds, file_engines = parse_pgn(filepath)
         engines_set.update(file_engines)
@@ -522,10 +557,8 @@ def main():
     simulation_end_time = time.time()
     simulation_elapsed_time = simulation_end_time - simulation_start_time
 
-    print("Calculating margin of error...")
-    confidence_intervals = calculate_percentile_intervals(simulated_ratings)
-
     print("Finalizing results...")
+    confidence_intervals = calculate_percentile_intervals(simulated_ratings)
     #combine the two dicts
     ratings_with_error_bars = {}
     for engine in mean_rating:
@@ -538,6 +571,7 @@ def main():
     ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
     penta_stats, performance_stats = format_penta_stats(summed_results)
     format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output)
+    output_to_csv(summed_results, ratings_with_error_bars, args.csv)
     script_end_time = time.time()
     script_elapsed_time = script_end_time - script_start_time
     print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
