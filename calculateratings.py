@@ -329,6 +329,8 @@ def calculate_expected_scores(results):
                 scores[engine1][engine2] = 0
             else:
                 scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+                if total_pairs = WW:
+                    print("Warning: result with perfect score was found. This will not be used for ratings calculation.")
     
     return scores
 
