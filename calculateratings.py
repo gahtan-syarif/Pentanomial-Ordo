@@ -329,6 +329,12 @@ def calculate_expected_scores(results):
                 scores[engine1][engine2] = 0
             else:
                 scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+                
+                # regularize perfect scores
+                if scores[engine1][engine2] == 0:
+                    scores[engine1][engine2] = ((LD + 1) * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+                elif scores[engine1][engine2] == 1:
+                    scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + (WD + 1) * 0.75 + (WW - 1)) / total_pairs
     
     return scores
 
@@ -365,11 +371,11 @@ def objective_function(ratings_array, engines, score_matrix):
     squared_errors = (predicted_scores - score_matrix) ** 2
     
     # Create a mask to exclude perfect scores
-    # mask = (score_matrix != 0) & (score_matrix != 1)
+    mask = (score_matrix != 0) & (score_matrix != 1)
     
     # Sum the squared errors where mask is True
-    # total_error = np.sum(squared_errors[mask])
-    total_error = np.sum(squared_errors)
+    total_error = np.sum(squared_errors[mask])
+    # total_error = np.sum(squared_errors)
     
     return total_error
     
@@ -469,8 +475,10 @@ def calculate_initial_ratings(summed_results):
         else:
             performance = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
             
-        if performance == 0 or performance == 1:
-            performance = (LD * 0.25 + (WLDD + 1) * 0.5 + WD * 0.75 + WW) / (total_pairs + 1)
+        if performance == 0:
+            performance = ((LD + 1) * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+        elif performance == 1:
+            performance = (LD * 0.25 + WLDD * 0.5 + (WD + 1) * 0.75 + (WW - 1)) / total_pairs
         
         initial_rating[engine] = -400 * np.log10(1 / performance - 1)
     return initial_rating
