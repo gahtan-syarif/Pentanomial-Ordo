@@ -329,8 +329,6 @@ def calculate_expected_scores(results):
                 scores[engine1][engine2] = 0
             else:
                 scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
-                if total_pairs == WW:
-                    print("Warning: result with perfect score was found. This will not be used for ratings calculation.")
     
     return scores
 
@@ -367,10 +365,11 @@ def objective_function(ratings_array, engines, score_matrix):
     squared_errors = (predicted_scores - score_matrix) ** 2
     
     # Create a mask to exclude perfect scores
-    mask = (score_matrix != 0) & (score_matrix != 1)
+    # mask = (score_matrix != 0) & (score_matrix != 1)
     
     # Sum the squared errors where mask is True
-    total_error = np.sum(squared_errors[mask])
+    # total_error = np.sum(squared_errors[mask])
+    total_error = np.sum(squared_errors)
     
     return total_error
     
@@ -466,16 +465,14 @@ def calculate_initial_ratings(summed_results):
         LL, LD, WLDD, WD, WW = pentanomial
         total_pairs = (LL + LD + WLDD + WD + WW)
         if total_pairs == 0:
-            performance = 0
+            performance = 0.5
         else:
             performance = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
             
-        if performance == 0:
-            initial_rating[engine] = -800
-        elif performance == 1:
-            initial_rating[engine] = 800
-        else:
-            initial_rating[engine] = -400 * np.log10(1 / performance - 1)
+        if performance == 0 or performance == 1:
+            performance = (LD * 0.25 + (WLDD + 1) * 0.5 + WD * 0.75 + WW) / (total_pairs + 1)
+        
+        initial_rating[engine] = -400 * np.log10(1 / performance - 1)
     return initial_rating
     
 def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings):
@@ -565,7 +562,6 @@ def main():
     results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
     for rounds in individual_rounds:
         update_game_pairs_pgn(results, rounds)
-
 
     # Calculate probabilities
     scores = calculate_expected_scores(results)
