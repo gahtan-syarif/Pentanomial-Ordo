@@ -1,6 +1,6 @@
 This is a Python script that calculates the pentanomial elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo). Ratings are calculated using an [optimization algorithm](https://en.wikipedia.org/wiki/Limited-memory_BFGS) with its error margins being calculated through non-parametric [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)).
 
-This script was made to tackle the issue where ordo displays incorrect error margins for tournaments where games are played in pairs in which each player/engine swaps sides, especially if unbalanced opening books are used. This is because ordo calculates the error margins using trinomial (win-draw-loss) probabilities that are inaccurate for paired games. To fix this, this script uses pentanomial (gamepair) probabilities that gives a better estimate for the error margins.
+This script was made to tackle the issue where ordo displays incorrect error margins for tournaments where games are played in pairs in which each player/engine swaps sides, especially if unbalanced opening books are used. This is because ordo calculates the error margins using trinomial (win-draw-loss) probabilities that are inaccurate for paired games. To fix this, this script uses pentanomial (game pair) probabilities that gives a better estimate for the error margins.
 
 How to use:
 - This script only works for tournaments where games are played in pairs where each engine/player swaps colors.
@@ -14,4 +14,4 @@ How to use:
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
-- Each PGN must be correctly formatted where every unique gamepair between two players/engines within that PGN must have a unique "Round" PGN header tag. Games that are part of the same gamepair must share the same "Round" header tag.
+- Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags. Games that are part of the same game pair must share the same "Round" tag.
