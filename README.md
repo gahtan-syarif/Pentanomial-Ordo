@@ -14,4 +14,4 @@ How to use:
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
-- Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags. Games that are part of the same game pair must share the same "Round" tag.
+- Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags. Games that are played in pairs must share the same "Round" tag.
