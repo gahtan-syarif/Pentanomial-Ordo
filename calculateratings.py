@@ -132,6 +132,12 @@ def update_game_pairs_pgn(results, rounds):
                 results[engine1][engine2] = (results[engine1][engine2][0], results[engine1][engine2][1] + 1, results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
             elif result1 == '0-1' and result2 == '1-0':
                 results[engine1][engine2] = (results[engine1][engine2][0] + 1, results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
+            elif result1 == '*' or result2 == '*':
+                print("Error: PGN contains an undecided game.")
+                exit(1)
+            else:
+                print("Error: incorrectly formatted 'Result' header tag in PGN")
+                exit(1)
 
 def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng):
     """
