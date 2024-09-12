@@ -371,7 +371,7 @@ def objective_function(ratings_array, engines, score_matrix):
     squared_errors = (predicted_scores - score_matrix) ** 2
     
     # Create a mask to exclude perfect scores
-    mask = (score_matrix != 0) & (score_matrix != 1)
+    mask = (score_matrix != 0) & (score_matrix != 1) #& (np.eye(num_engines) == 0)
     
     # Sum the squared errors where mask is True
     total_error = np.sum(squared_errors[mask])
@@ -465,22 +465,10 @@ def sum_all_results(results):
     
     return summed_results
     
-def calculate_initial_ratings(summed_results):
+def set_initial_ratings(engines):
     initial_rating = {}
-    for engine, pentanomial in summed_results.items():
-        LL, LD, WLDD, WD, WW = pentanomial
-        total_pairs = (LL + LD + WLDD + WD + WW)
-        if total_pairs == 0:
-            performance = 0.5
-        else:
-            performance = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
-            
-        if performance == 0:
-            performance = ((LD + 1) * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
-        elif performance == 1:
-            performance = (LD * 0.25 + WLDD * 0.5 + (WD + 1) * 0.75 + (WW - 1)) / total_pairs
-        
-        initial_rating[engine] = -400 * np.log10(1 / performance - 1)
+    for engine in engines:
+        initial_rating[engine] = 0
     return initial_rating
     
 def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings):
@@ -574,7 +562,7 @@ def main():
     # Calculate probabilities
     scores = calculate_expected_scores(results)
     summed_results = sum_all_results(results)
-    initial_ratings = calculate_initial_ratings(summed_results)
+    initial_ratings = set_initial_ratings(engines)
     mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
     probabilities = calculate_probabilities(results)
 
