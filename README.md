@@ -12,6 +12,7 @@ How to use:
 - To set the average rating for the pool, use the argument `--average AVG` with the default being 2300.
 - If you want to set an anchor engine/player, use the argument `--anchor ANCHOR`.
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
+- Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
 - Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags. Games that are played in pairs must share the same "Round" tag. An example of a correctly formatted PGN file is provided above.
