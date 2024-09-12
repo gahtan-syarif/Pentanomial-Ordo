@@ -4,6 +4,7 @@ This script was made to tackle the issue where ordo displays incorrect error mar
 
 How to use:
 - This script only works for tournaments where games are played in pairs where each engine/player swaps colors.
+- Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags. Games that are played in pairs must share the same "Round" tag. An example of a correctly formatted PGN file is provided above.
 - Required Python dependencies: numpy, scipy
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
 - To automatically input all PGN files within a directory, use the argument `--pgndirectory DIRECTORY`.
@@ -15,4 +16,3 @@ How to use:
 - Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
-- Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags. Games that are played in pairs must share the same "Round" tag. An example of a correctly formatted PGN file is provided above.
