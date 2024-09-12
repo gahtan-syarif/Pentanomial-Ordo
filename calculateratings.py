@@ -238,10 +238,10 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
         if mean_rating >= lower_bound:
             error_down_str = f"-{abs(round(mean_rating - lower_bound, 1))}"
         else:
-            error_down_str = f"+{abs(round(mean_rating - lower_bound, 1))}"
+            error_down_str = f"+{abs(round(lower_bound - mean_rating, 1))}"
             
-        if mean_rating <= lower_bound:
-            error_up_str = f"+{abs(round(mean_rating - upper_bound, 1))}"
+        if mean_rating <= upper_bound:
+            error_up_str = f"+{abs(round(upper_bound - mean_rating, 1))}"
         else:
             error_up_str = f"-{abs(round(mean_rating - upper_bound, 1))}"
             
