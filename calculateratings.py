@@ -317,7 +317,7 @@ def sort_engines_by_mean(ratings_with_error_bars):
     
     return sorted_dict
 
-def calculate_expected_scores(results):
+def calculate_expected_scores(results, purge):
     scores = {}
     
     for engine1 in results:
@@ -331,10 +331,11 @@ def calculate_expected_scores(results):
                 scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
                 
                 # regularize perfect scores
-                if scores[engine1][engine2] == 0:
-                    scores[engine1][engine2] = ((LD + 1) * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
-                elif scores[engine1][engine2] == 1:
-                    scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + (WD + 1) * 0.75 + (WW - 1)) / total_pairs
+                if purge == False:
+                    if scores[engine1][engine2] == 0:
+                        scores[engine1][engine2] = ((LD + 1) * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+                    elif scores[engine1][engine2] == 1:
+                        scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + (WD + 1) * 0.75 + (WW - 1)) / total_pairs
     
     return scores
 
@@ -471,11 +472,11 @@ def set_initial_ratings(engines):
         initial_rating[engine] = 0
     return initial_rating
     
-def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings):
+def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge):
     # Each process gets its own RNG with a different seed
     rng = np.random.default_rng(seed + i)
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
-    simulated_scores = calculate_expected_scores(simulated_results)
+    simulated_scores = calculate_expected_scores(simulated_results, purge)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor)
     
 def format_penta_stats(summed_results):
@@ -526,6 +527,7 @@ def main():
     parser.add_argument('--csv', type=str, default="")
     parser.add_argument('--rngseed', type=int, default=42)
     parser.add_argument('--concurrency', type=int, default=os.cpu_count())
+    parser.add_argument('--purge', action='store_true')
     args = parser.parse_args()
     script_start_time = time.time()
     if not args.pgnfile and not args.pgndirectory:
@@ -560,7 +562,7 @@ def main():
         update_game_pairs_pgn(results, rounds)
 
     # Calculate probabilities
-    scores = calculate_expected_scores(results)
+    scores = calculate_expected_scores(results, args.purge)
     summed_results = sum_all_results(results)
     initial_ratings = set_initial_ratings(engines)
     mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
@@ -574,7 +576,7 @@ def main():
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
         futures = [
-            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor, initial_ratings)
+            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor, initial_ratings, args.purge)
             for i in range(num_simulations)
         ]
         for future in as_completed(futures):
