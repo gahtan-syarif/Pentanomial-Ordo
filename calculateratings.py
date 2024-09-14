@@ -280,9 +280,9 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
         "(%)"
     ]
     
-    output_line("-" * (rank_length + max_engine_length + max_mean_length + total_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 15))
+    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 15))
     output_line(f"{headers[0]:<{rank_length}}  {headers[1]:<{max_engine_length}}   {headers[2]:>{max_mean_length}}  {headers[3]:<{total_error_length}}  {headers[4]:<{penta_stats_length}}  {headers[5]:>{points_length}}  {headers[6]:>{pairs_length}}  {headers[7]:>{performance_stats_length}}")
-    output_line("-" * (rank_length + max_engine_length + max_mean_length + total_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 15))
+    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 15))
     # Print each engine's ratings with formatted errors and confidence intervals
     i = 0
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
@@ -296,7 +296,7 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
         points_str = f"{points[engine]:.1f}"
 
         output_line(f"{i:<{rank_length}}  {engine:<{max_engine_length}}:  {mean_rating_str:>{max_mean_length}}  {error_str:<{total_error_length}}  {penta_stats[engine]:<{penta_stats_length}}  {points_str:>{points_length}}  {pairs_str:>{pairs_length}}  {performance_stats[engine]:>{performance_stats_length}}")
-    output_line("-" * (rank_length + max_engine_length + max_mean_length + total_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 15))
+    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 15))
 
 def sort_engines_by_mean(ratings_with_error_bars):
     """
