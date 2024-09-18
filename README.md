@@ -12,6 +12,7 @@ How to use:
 - To set the seed for the random number generator, you can add `--rngseed SEED` with the default seed being 42.
 - To set the average rating for the pool, use the argument `--average AVG` with the default being 2300.
 - If you want to set an anchor engine/player, use the argument `--anchor ANCHOR`.
+- Use `--confidence N` to set the % confidence interval for the error margin with the default value being 95.
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
 - Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
 - Use `--output FILE` to output the ratings as a text file.
