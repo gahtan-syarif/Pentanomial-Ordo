@@ -10,7 +10,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-def calculate_percentile_intervals(engine_ratings, percentile=95):
+def calculate_percentile_intervals(engine_ratings, percentile=95.0):
     """
     Calculate the percentile-based confidence intervals for the ratings of each engine based on multiple simulations.
 
@@ -391,7 +391,7 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
         args=(engines, score_matrix),
         method='L-BFGS-B',
         bounds=[(-np.inf, np.inf)] * num_engines,
-        options={'gtol': 1e-14}  # Increased precision
+        options={'gtol': 1e-12}  # Increased precision
     )
     # Check if the result converged
     if not result.success:
@@ -528,8 +528,11 @@ def main():
     parser.add_argument('--rngseed', type=int, default=42)
     parser.add_argument('--concurrency', type=int, default=os.cpu_count())
     parser.add_argument('--purge', action='store_true')
+    parser.add_argument('--confidence', type=float, default=95.0)
     args = parser.parse_args()
     script_start_time = time.time()
+    if args.confidence <= 0.0 or args.confidence >=100.0:
+        parser.error("Invalid confidence interval.")
     if not args.pgnfile and not args.pgndirectory:
         parser.error("At least one of --pgnfile or --pgndirectory must be specified.")
     
@@ -587,7 +590,7 @@ def main():
     simulation_elapsed_time = simulation_end_time - simulation_start_time
 
     print("Finalizing results...")
-    confidence_intervals = calculate_percentile_intervals(simulated_ratings)
+    confidence_intervals = calculate_percentile_intervals(simulated_ratings, args.confidence)
     #combine the two dicts
     ratings_with_error_bars = {}
     for engine in mean_rating:
