@@ -19,3 +19,4 @@ How to use:
 - Use `--exclude PLAYER1 PLAYER2 PLAYER3 ...` to exclude a list of engines/players from the rating list.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
+- For very large PGN files (>1GB), it is recommended to shrink the PGN file beforehand to massively reduce the PGN loading/parsing time. this can be done by using the `shrinkpgn.py` script with the command: `python shrinkpgn.py --inputfile FILENAME --outputfile FILENAME` 
