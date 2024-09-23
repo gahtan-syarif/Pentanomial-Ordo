@@ -15,5 +15,7 @@ How to use:
 - Use `--confidence N` to set the % confidence interval for the error margin with the default value being 95.
 - To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
 - Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
+- Use `--decimal N` to round ratings results to N decimal places. Default value is 1.
+- Use `--exclude PLAYER1 PLAYER2 PLAYER3 ...` to exclude a list of engines/players from the rating list.
 - Use `--output FILE` to output the ratings as a text file.
 - Use `--csv FILE` to output the ratings as a csv file.
