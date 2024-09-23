@@ -222,7 +222,7 @@ def update_pentanomial(results, engine1, engine2, pentanomial):
     results[engine1][engine2] = tuple(pentanomial)
     results[engine2][engine1] = tuple(pentanomial[::-1])
 
-def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, filename):
+def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, filename, decimal):
     pairs_played = {}
     points = {}
     number_of_engines = 0
@@ -236,20 +236,20 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
         error_down_str = ""
         error_up_str = ""
         if mean_rating >= lower_bound:
-            error_down_str = f"-{abs(round(mean_rating - lower_bound, 1))}"
+            error_down_str = f"-{abs(mean_rating - lower_bound):.{decimal}f}"
         else:
-            error_down_str = f"+{abs(round(lower_bound - mean_rating, 1))}"
+            error_down_str = f"+{abs(lower_bound - mean_rating):.{decimal}f}"
             
         if mean_rating <= upper_bound:
-            error_up_str = f"+{abs(round(upper_bound - mean_rating, 1))}"
+            error_up_str = f"+{abs(upper_bound - mean_rating):.{decimal}f}"
         else:
-            error_up_str = f"-{abs(round(mean_rating - upper_bound, 1))}"
+            error_up_str = f"-{abs(mean_rating - upper_bound):.{decimal}f}"
             
         return f"({error_down_str}/{error_up_str})"
         
     # Determine the maximum width for each column
     max_engine_length = max(len(engine) for engine in ratings_with_error_bars.keys())
-    max_mean_length = max(len(f"{mean_rating:.1f}") for mean_rating, _, _ in ratings_with_error_bars.values())
+    max_mean_length = max(len(f"{mean_rating:.{decimal}f}") for mean_rating, _, _ in ratings_with_error_bars.values())
     penta_stats_length = max(len(penta_string) for penta_string in penta_stats.values())
     performance_stats_length = max(max(len(performance_string) for performance_string in performance_stats.values()), len("(%)"))
     points_length = max(max(len(f"{individual_points:.1f}") for individual_points in points.values()), len("POINTS"))
@@ -287,11 +287,9 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
     i = 0
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
         i += 1
-        error_down = round(lower_bound - mean_rating, 1)
-        error_up = round(upper_bound - mean_rating, 1)
-        mean_rating_str = f"{mean_rating:.1f}"
+        mean_rating_str = f"{mean_rating:.{decimal}f}"
         error_str = format_error_str(mean_rating, lower_bound, upper_bound)
-        interval_str = f"[{lower_bound:.1f}, {upper_bound:.1f}]"
+        interval_str = f"[{lower_bound:.{decimal}f}, {upper_bound:.{decimal}f}]"
         pairs_str = f"{pairs_played[engine]}"
         points_str = f"{points[engine]:.1f}"
 
@@ -479,7 +477,7 @@ def run_simulation(i, probabilities, engines, seed, results, average, anchor, in
     simulated_scores = calculate_expected_scores(simulated_results, purge)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor)
     
-def format_penta_stats(summed_results):
+def format_penta_stats(summed_results, decimal):
     penta_stats = {}
     performance_stats = {}
     for engine, pentanomial in summed_results.items():
@@ -490,10 +488,10 @@ def format_penta_stats(summed_results):
         else:
             performance = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
         penta_stats[engine] = f"[{LL}, {LD}, {WLDD}, {WD}, {WW}]"
-        performance_stats[engine] = f"{round(performance * 100, 1)}%"
+        performance_stats[engine] = f"{(performance * 100):.{decimal}f}%"
     return penta_stats, performance_stats
     
-def output_to_csv(summed_results, ratings_with_error_bars, filename):
+def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal):
     def write_line(line):
         if filename != "":
             try:
@@ -514,7 +512,7 @@ def output_to_csv(summed_results, ratings_with_error_bars, filename):
     i=0
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
         i += 1
-        write_line(f"{i},{engine},{round(mean_rating, 1)},{round(lower_bound-mean_rating, 1)},{round(upper_bound-mean_rating,1)},{LL[engine]},{LD[engine]},{WLDD[engine]},{WD[engine]},{WW[engine]}")
+        write_line(f"{i},{engine},{mean_rating:.{decimal}f},{(lower_bound-mean_rating):.{decimal}f},{(upper_bound-mean_rating):.{decimal}f},{LL[engine]},{LD[engine]},{WLDD[engine]},{WD[engine]},{WW[engine]}")
     
 def main():
     parser = argparse.ArgumentParser()
@@ -529,6 +527,8 @@ def main():
     parser.add_argument('--concurrency', type=int, default=os.cpu_count())
     parser.add_argument('--purge', action='store_true')
     parser.add_argument('--confidence', type=float, default=95.0)
+    parser.add_argument('--exclude', type=str, nargs='+', default=[])
+    parser.add_argument('--decimal', type=int, default=1)
     args = parser.parse_args()
     script_start_time = time.time()
     if args.confidence <= 0.0 or args.confidence >=100.0:
@@ -564,6 +564,15 @@ def main():
     for rounds in individual_rounds:
         update_game_pairs_pgn(results, rounds)
 
+    # exclude specified engines
+    for engine_to_remove in args.exclude:
+        if engine_to_remove not in engines:
+            raise ValueError(f"{engine_to_remove} not found in engines list.")
+        engines = [engine for engine in engines if engine != engine_to_remove]
+        results.pop(engine_to_remove, None)
+        for engine in results.keys():
+            results[engine].pop(engine_to_remove, None)
+        
     # Calculate probabilities
     scores = calculate_expected_scores(results, args.purge)
     summed_results = sum_all_results(results)
@@ -601,9 +610,9 @@ def main():
 
     #print final ratings with confidence intervals
     ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
-    penta_stats, performance_stats = format_penta_stats(summed_results)
-    format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output)
-    output_to_csv(summed_results, ratings_with_error_bars, args.csv)
+    penta_stats, performance_stats = format_penta_stats(summed_results, args.decimal)
+    format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output, args.decimal)
+    output_to_csv(summed_results, ratings_with_error_bars, args.csv, args.decimal)
     script_end_time = time.time()
     script_elapsed_time = script_end_time - script_start_time
     print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
