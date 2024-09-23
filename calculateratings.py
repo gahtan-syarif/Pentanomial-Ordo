@@ -492,6 +492,11 @@ def format_penta_stats(summed_results, decimal):
     return penta_stats, performance_stats
     
 def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal):
+    try:
+        os.remove(Path(filename).resolve())
+    except OSError:
+        pass
+        
     def write_line(line):
         if filename != "":
             try:
