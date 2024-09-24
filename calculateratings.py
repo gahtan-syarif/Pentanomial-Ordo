@@ -533,6 +533,7 @@ def main():
     parser.add_argument('--purge', action='store_true')
     parser.add_argument('--confidence', type=float, default=95.0)
     parser.add_argument('--exclude', type=str, nargs='+', default=[])
+    parser.add_argument('--include', type=str, nargs='+', default=[])
     parser.add_argument('--decimal', type=int, default=1)
     args = parser.parse_args()
     script_start_time = time.time()
@@ -570,7 +571,15 @@ def main():
         update_game_pairs_pgn(results, rounds)
 
     # exclude specified engines
-    for engine_to_remove in args.exclude:
+    engines_to_remove = []
+    if not args.include:
+        engines_to_remove = args.exclude
+    else:
+        for engine_to_keep in args.include:
+            if engine_to_keep not in engines:
+                raise ValueError(f"{engine_to_keep} not found in engines list.")
+        engines_to_remove = [engine for engine in engines if engine not in args.include]
+    for engine_to_remove in engines_to_remove:
         if engine_to_remove not in engines:
             raise ValueError(f"{engine_to_remove} not found in engines list.")
         engines = [engine for engine in engines if engine != engine_to_remove]
