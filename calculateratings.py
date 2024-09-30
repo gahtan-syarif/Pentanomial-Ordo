@@ -470,6 +470,10 @@ def sum_all_results(results):
         summed_results[engine] = summed_tuple
         if (summed_results[engine][4] == (summed_results[engine][0] + summed_results[engine][1] + summed_results[engine][2] + summed_results[engine][3] + summed_results[engine][4])):
             raise ValueError(f"Rating for {engine} cannot be calculated as it won all games. Please remove from the list using --exclude.")
+            
+        if (summed_results[engine][0] == (summed_results[engine][0] + summed_results[engine][1] + summed_results[engine][2] + summed_results[engine][3] + summed_results[engine][4])):
+            raise ValueError(f"Rating for {engine} cannot be calculated as it lost all games. Please remove from the list using --exclude.")
+            
     return summed_results
     
 def set_initial_ratings(engines):
