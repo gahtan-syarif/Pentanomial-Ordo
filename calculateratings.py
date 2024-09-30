@@ -3,6 +3,7 @@ from scipy.optimize import minimize
 import subprocess
 import os
 import re
+import sys
 import io
 import numpy as np
 import argparse
@@ -110,7 +111,7 @@ def update_game_pairs_pgn(results, rounds):
             
             # Store results for each game in the current round
             if white == black:  # Ensure it's a valid pair
-                print("Error: PGN contains match between two players/engines with the same name")
+                print("Error: PGN contains match between two players/engines with the same name", file=sys.stderr)
                 exit(1)
             round_results[(white, black)].append(result)
 
@@ -118,7 +119,7 @@ def update_game_pairs_pgn(results, rounds):
         for (engine1, engine2), results_list in round_results.items():
             results_list_opponent = round_results.get((engine2, engine1), [])
             if len(results_list) != 1 or len(results_list_opponent) != 1:
-                print("Error: PGN 'Round' header tag is incorrectly formatted. Make sure each gamepair has a unique 'Round' header tag.")
+                print("Error: PGN 'Round' header tag is incorrectly formatted. Make sure each gamepair has a unique 'Round' header tag.", file=sys.stderr)
                 exit(1)
             result1 = results_list[0]
             result2 = results_list_opponent[0]
@@ -133,10 +134,10 @@ def update_game_pairs_pgn(results, rounds):
             elif result1 == '0-1' and result2 == '1-0':
                 results[engine1][engine2] = (results[engine1][engine2][0] + 1, results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
             elif result1 == '*' or result2 == '*':
-                print("Error: PGN contains an undecided game.")
+                print("Error: PGN contains an undecided game.", file=sys.stderr)
                 exit(1)
             else:
-                print("Error: incorrectly formatted 'Result' header tag in PGN")
+                print("Error: incorrectly formatted 'Result' header tag in PGN", file=sys.stderr)
                 exit(1)
 
 def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng):
@@ -331,9 +332,11 @@ def calculate_expected_scores(results, purge):
                 # regularize perfect scores
                 if purge == False:
                     if scores[engine1][engine2] == 0:
-                        scores[engine1][engine2] = ((LD + 1) * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+                        # scores[engine1][engine2] = ((LD + 1) * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
+                        scores[engine1][engine2] = 1e-15
                     elif scores[engine1][engine2] == 1:
-                        scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + (WD + 1) * 0.75 + (WW - 1)) / total_pairs
+                        # scores[engine1][engine2] = (LD * 0.25 + WLDD * 0.5 + (WD + 1) * 0.75 + (WW - 1)) / total_pairs
+                        scores[engine1][engine2] = 1 - 1e-15
     
     return scores
 
@@ -366,9 +369,6 @@ def objective_function(ratings_array, engines, score_matrix):
     predicted_scores = 1 / (1 + 10 ** (rating_diff / 400))
     # predicted_scores = 1 / (1 + np.exp(1) ** (rating_diff * 0.00570633)) #ordo's model
     
-    # Compute the squared errors matrix
-    # squared_errors = (predicted_scores - score_matrix) ** 2
-    
     # Create a mask to exclude perfect scores
     mask = (score_matrix != 0) & (score_matrix != 1) #& (np.eye(num_engines) == 0)
     
@@ -396,11 +396,11 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
         args=(engines, score_matrix),
         method='L-BFGS-B',
         bounds=[(-np.inf, np.inf)] * num_engines,
-        options={'gtol': 1e-12}  # Increased precision
+        options={'gtol': 1e-8}  # Increased precision
     )
     # Check if the result converged
-    if not result.success:
-        print("Warning: one of the simulations did not converge properly")
+    # if not result.success:
+        # print("Warning: one of the simulations did not converge properly")
     optimized_ratings_array = result.x
     
     # Convert optimized ratings array back to dictionary
@@ -468,7 +468,8 @@ def sum_all_results(results):
         
         # Store the summed tuple in the new dictionary
         summed_results[engine] = summed_tuple
-    
+        if (summed_results[engine][4] == (summed_results[engine][0] + summed_results[engine][1] + summed_results[engine][2] + summed_results[engine][3] + summed_results[engine][4])):
+            raise ValueError(f"Rating for {engine} cannot be calculated as it won all games. Please remove from the list using --exclude.")
     return summed_results
     
 def set_initial_ratings(engines):
@@ -562,7 +563,7 @@ def main():
         if pgndirectory.is_dir():
             pgnfiles.extend(pgndirectory.glob('*.pgn'))
         else:
-            print(f"Error: {pgndirectory} is not a valid directory.")
+            print(f"Error: {pgndirectory} is not a valid directory.", file=sys.stderr)
             exit(1)
     individual_rounds = []
     engines_set = set()
