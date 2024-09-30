@@ -45,3 +45,4 @@ RANK  NAME                 :     ELO  ERROR        PENTANOMIAL                  
 16    Titan 1.1 avx2       :  -102.5  (-2.6/+2.6)  [258, 4396, 2319, 510, 17]    5316.0   7500  35.4%
 =====================================================================================================
 ```
+Note: Ratings would be slightly different from Ordo. This is because Ordo by default incorrectly calibrates the rating to be 202 elo at 76% expected score. The script fixes this by setting it to the correct value that is 200.24 elo.
