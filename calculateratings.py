@@ -367,14 +367,21 @@ def objective_function(ratings_array, engines, score_matrix):
     # predicted_scores = 1 / (1 + np.exp(1) ** (rating_diff * 0.00570633)) #ordo's model
     
     # Compute the squared errors matrix
-    squared_errors = (predicted_scores - score_matrix) ** 2
+    # squared_errors = (predicted_scores - score_matrix) ** 2
     
     # Create a mask to exclude perfect scores
     mask = (score_matrix != 0) & (score_matrix != 1) #& (np.eye(num_engines) == 0)
     
-    # Sum the squared errors where mask is True
-    total_error = np.sum(squared_errors[mask])
-    # total_error = np.sum(squared_errors)
+    # Compute the binary cross-entropy only for non-perfect scores
+    # We need to clip predicted_scores to avoid log(0)
+    predicted_scores = np.clip(predicted_scores, 1e-15, 1 - 1e-15)
+    
+    # Calculate the binary cross-entropy loss
+    cross_entropy_loss = - (score_matrix[mask] * np.log(predicted_scores[mask]) + 
+                             (1 - score_matrix[mask]) * np.log(1 - predicted_scores[mask]))
+    
+    # Sum the cross-entropy loss
+    total_error = np.sum(cross_entropy_loss)
     
     return total_error
     
