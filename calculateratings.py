@@ -370,7 +370,7 @@ def objective_function(ratings_array, engines, score_matrix):
     # predicted_scores = 1 / (1 + np.exp(1) ** (rating_diff * 0.00570633)) #ordo's model
     
     # Create a mask to exclude perfect scores
-    mask = (score_matrix != 0) & (score_matrix != 1) #& (np.eye(num_engines) == 0)
+    mask = (score_matrix != 0) & (score_matrix != 1) & np.triu(np.ones_like(score_matrix, dtype=bool), k=1)
     
     # Compute the binary cross-entropy only for non-perfect scores
     # We need to clip predicted_scores to avoid log(0)
