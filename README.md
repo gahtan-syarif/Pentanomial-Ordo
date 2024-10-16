@@ -47,4 +47,4 @@ RANK  NAME                   :     ELO  ERROR        LOS(%)  PENTANOMIAL        
 16    Titan 1.1 avx2         :  2197.5  (-2.6/+2.6)     0.0  [258, 4396, 2319, 510, 17]    5316.0   7500  35.4%
 ===============================================================================================================
 ```
-Note: Ratings would be slightly different from Ordo. This is because Ordo by default incorrectly calibrates the rating to be 202 elo at 76% expected score. The script fixes this by setting it to the correct value that is 200.24 elo. CFS is also replaced with LOS (likelihood of superiority).
+Note: Ratings would be slightly different from Ordo. This is because Ordo by default incorrectly calibrates the rating to be 202 elo at 76% expected score. The script fixes this by setting it to the correct value that is 200.24 elo. CFS is also renamed to LOS (likelihood of superiority).
