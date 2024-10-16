@@ -572,6 +572,32 @@ def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal, lo
         i += 1
         write_line(f"{i},{engine},{mean_rating:.{decimal}f},{(lower_bound-mean_rating):.{decimal}f},{(upper_bound-mean_rating):.{decimal}f},{(los[engine]):.{decimal}f},{LL[engine]},{LD[engine]},{WLDD[engine]},{WD[engine]},{WW[engine]}")
     
+def head_to_head(results, filename):
+    try:
+        os.remove(Path(filename).resolve())
+    except OSError:
+        pass
+        
+    def write_line(line):
+        if filename != "":
+            try:
+                # Resolve the path and open the file in append mode
+                with open(Path(filename).resolve(), "a") as file:
+                    file.write(line + "\n")
+            except IOError as e:
+                # Handle file I/O errors
+                print(f"Error writing to file {filename}: {e}")
+                
+    engines_str_length = max(len(f"{engine} vs {opponent}") for engine, opponents in results.items() for opponent, _ in opponents.items())
+    penta_str_length = max(len(f"{scores}") for engine, opponents in results.items() for opponent, scores in opponents.items())
+    write_line("head-to-head pentanomial results:")
+    for engine, opponents in results.items():
+        for opponent, scores in opponents.items():
+            engines_str = f"{engine} vs {opponent}"
+            penta_str = f"[{scores[0]}, {scores[1]}, {scores[2]}, {scores[3]}, {scores[4]}]"
+            pairs = scores[0] + scores[1] + scores[2] + scores[3] + scores[4]
+            write_line(f"{engines_str:<{engines_str_length}}  : {penta_str:<{penta_str_length}} : {pairs} Pairs")
+    
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--pgnfile', type=str, nargs='+', default=[])
@@ -589,6 +615,7 @@ def main():
     parser.add_argument('--include', type=str, nargs='+', default=[])
     parser.add_argument('--decimal', type=int, default=1)
     parser.add_argument('--quiet', action='store_true')
+    parser.add_argument('--head2head', type=str, default="")
     args = parser.parse_args()
     script_start_time = time.time()
     if args.confidence <= 0.0 or args.confidence >=100.0:
@@ -685,6 +712,7 @@ def main():
     penta_stats, performance_stats = format_penta_stats(summed_results, args.decimal)
     format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output, args.decimal, los)
     output_to_csv(summed_results, ratings_with_error_bars, args.csv, args.decimal, los)
+    head_to_head(results, args.head2head)
     script_end_time = time.time()
     script_elapsed_time = script_end_time - script_start_time
     if not args.quiet:
