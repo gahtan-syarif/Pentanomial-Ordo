@@ -7,22 +7,22 @@ How to use:
 - Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags listed in that order. Games that are played in pairs must share the same "Round" tag. An example of a correctly formatted PGN file is provided above.
 - Required Python dependencies: numpy, scipy
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
-- To automatically input all PGN files within a directory, use the argument `--pgndirectory DIRECTORY`.
-- To set the number of simulations, add `--simulations NUM` with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes.
-- To set the seed for the random number generator, you can add `--rngseed SEED` with the default seed being 42.
-- To set the average rating for the pool, use the argument `--average AVG` with the default being 2300.
-- If you want to set an anchor engine/player, use the argument `--anchor ANCHOR`.
-- Use `--confidence N` to set the % confidence interval for the error margin with the default value being 95.
-- To set the number of parallel processes, set `--concurrency N` with the default being the number of CPU hardware threads.
+- Use `--pgndirectory DIRECTORY` if you want to automatically input all PGN files within a directory.
+- Use `--simulations NUM` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes.
+- Use `--rngseed SEED` if you want to set the seed for the random number generator, with the default seed being 42.
+- Use `--average AVG` to set the average rating for the pool, with the default being 2300.
+- Use `--anchor ANCHOR` if you want to set an anchor engine/player.
+- Use `--confidence N` to set the % confidence interval for the error margin, with the default value being 95.
+- Use `--concurrency N` to set the number of parallel processes, with the default being the number of CPU hardware threads.
 - Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
 - Use `--decimal N` to round ratings results to N decimal places. Default value is 1.
-- Use `--exclude PLAYER1 PLAYER2 PLAYER3 ...` to exclude a list of engines/players from the rating list.
-- Use `--include PLAYER1 PLAYER2 PLAYER3 ...` to only include the engines/players listed into the rating list. Opposite of `--exclude`.
-- Use `--output FILE` to output the ratings as a text file.
-- Use `--csv FILE` to output the ratings as a csv file.
-- Use `--head2head FILE` to output head-to-head results to a text file.
-- Use `--losmatrix FILE` to output matrix of LOS values as a csv FILE.
-- Use `--quiet` to silence progress updates.
+- Use `--exclude PLAYER1 PLAYER2 PLAYER3 ...` if you want to exclude a list of engines/players from the rating list.
+- Use `--include PLAYER1 PLAYER2 PLAYER3 ...` if you want to only include the engines/players listed into the rating list.
+- Use `--output FILE` if you want to output the ratings as a text file.
+- Use `--csv FILE` if you want to output the ratings as a csv file.
+- Use `--head2head FILE` if you want to output head-to-head results to a text file.
+- Use `--losmatrix FILE` if you want to output matrix of LOS values as a csv FILE.
+- Use `--quiet` if you want to silence progress updates.
 - For very large PGN files (>1GB), it is recommended to shrink the PGN file beforehand to massively reduce the PGN loading/parsing time. this can be done by using the `shrinkpgn.py` script with the command: `python shrinkpgn.py --inputfile FILENAME --outputfile FILENAME`
 
 Example output from SPCC [UHO-Top15 Ratinglist](https://www.sp-cc.de/) (average Elo set to 0):
