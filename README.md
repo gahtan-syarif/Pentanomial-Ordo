@@ -8,10 +8,10 @@ How to use:
 - Required Python dependencies: numpy, scipy
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
 - Use `--pgndirectory DIRECTORY` if you want to automatically input all PGN files within a directory.
-- Use `--simulations NUM` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes.
-- Use `--rngseed SEED` if you want to set the seed for the random number generator, with the default seed being 42.
-- Use `--average AVG` to set the average rating for the pool, with the default being 2300.
-- Use `--anchor ANCHOR` if you want to set an anchor engine/player.
+- Use `--simulations N` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes.
+- Use `--rngseed N` if you want to set the seed for the random number generator, with the default seed being 42.
+- Use `--average N` to set the average rating for the pool, with the default being 2300.
+- Use `--anchor PLAYER` if you want to set an anchor engine/player.
 - Use `--confidence N` to set the % confidence interval for the error margin, with the default value being 95.
 - Use `--concurrency N` to set the number of parallel processes, with the default being the number of CPU hardware threads.
 - Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
