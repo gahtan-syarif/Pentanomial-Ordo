@@ -10,6 +10,7 @@ import argparse
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+import csv
 
 def calculate_percentile_intervals(engine_ratings, percentile=95.0):
     """
@@ -572,7 +573,7 @@ def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal, lo
     i=0
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
         i += 1
-        write_line(f"{i},{engine},{mean_rating:.{decimal}f},{(lower_bound-mean_rating):.{decimal}f},{(upper_bound-mean_rating):.{decimal}f},{(los[engine]):.{decimal}f},{LL[engine]},{LD[engine]},{WLDD[engine]},{WD[engine]},{WW[engine]}")
+        write_line(f'{i},"{engine}",{mean_rating:.{decimal}f},{(lower_bound-mean_rating):.{decimal}f},{(upper_bound-mean_rating):.{decimal}f},{(los[engine]):.{decimal}f},{LL[engine]},{LD[engine]},{WLDD[engine]},{WD[engine]},{WW[engine]}')
     
 def head_to_head(results, filename):
     try:
@@ -601,6 +602,57 @@ def head_to_head(results, filename):
             pairs = scores[0] + scores[1] + scores[2] + scores[3] + scores[4]
             write_line(f"{engines_str:<{engines_str_length}}  : {penta_str:<{penta_str_length}} : {pairs} Pairs")
     
+def los_matrix(simulated_ratings, ratings_with_error_bars, filename, decimals):
+    if filename == '':
+        return
+        
+    engines = list(ratings_with_error_bars.keys())
+        
+    # Collect all ratings for each engine
+    all_ratings = {}
+    for sim_id, ratings in simulated_ratings.items():
+        for engine, rating in ratings.items():
+            if engine not in all_ratings:
+                all_ratings[engine] = []
+            all_ratings[engine].append(rating)
+            
+    losmatrix = {}
+    for player1 in engines:
+        if player1 not in losmatrix:
+            losmatrix[player1] = {}
+        for player2 in engines:
+            if (player1 != player2):
+                exceed_count = 0
+                for i in range(len(all_ratings[player2])):
+                    if (all_ratings[player1][i] > all_ratings[player2][i]):
+                        exceed_count += 1
+                losmatrix[player1][player2] = exceed_count * 100.0 / len(all_ratings[player2])
+            
+    # Create a CSV file
+    try:
+        with open(Path(filename).resolve(), 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, quoting=csv.QUOTE_STRINGS)
+            
+            # Write the header (player names)
+            writer.writerow(['N'] + ['NAME'] + list(range(len(engines))))
+            
+            # Write the rows
+            increment = 0
+            
+            for engine1 in engines:
+                row = [increment, engine1]  # Start the row with engine1 name
+                for engine2 in engines:
+                    los = losmatrix[engine1].get(engine2, '')
+                    # Format the los if it's a float
+                    if isinstance(los, float):
+                        los = f'{los:.{decimals}f}'  # Format to the desired decimal places
+                    row.append(los)
+                writer.writerow(row)
+                increment += 1
+    except IOError as e:
+        print(f"Error writing to file {filename}: {e}", file=sys.stderr)
+        exit(1)
+            
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--pgnfile', type=str, nargs='+', default=[])
@@ -619,6 +671,7 @@ def main():
     parser.add_argument('--decimal', type=int, default=1)
     parser.add_argument('--quiet', action='store_true')
     parser.add_argument('--head2head', type=str, default="")
+    parser.add_argument('--losmatrix', type=str, default="")
     args = parser.parse_args()
     script_start_time = time.time()
     if args.confidence <= 0.0 or args.confidence >=100.0:
@@ -712,10 +765,11 @@ def main():
     #print final ratings with confidence intervals
     ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
     los = calculate_los(simulated_ratings, ratings_with_error_bars)
+    los_matrix(simulated_ratings, ratings_with_error_bars, args.losmatrix, args.decimal)
     penta_stats, performance_stats = format_penta_stats(summed_results, args.decimal)
-    format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output, args.decimal, los)
     output_to_csv(summed_results, ratings_with_error_bars, args.csv, args.decimal, los)
     head_to_head(results, args.head2head)
+    format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output, args.decimal, los)
     script_end_time = time.time()
     script_elapsed_time = script_end_time - script_start_time
     if not args.quiet:
