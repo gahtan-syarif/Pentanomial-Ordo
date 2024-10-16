@@ -9,13 +9,12 @@ How to use:
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
 - Use `--pgndirectory DIRECTORY` if you want to automatically input all PGN files within a directory.
 - Use `--simulations N` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes.
-- Use `--rngseed N` if you want to set the seed for the random number generator, with the default seed being 42.
 - Use `--average N` to set the average rating for the pool, with the default being 2300.
 - Use `--anchor PLAYER` if you want to set an anchor engine/player.
 - Use `--confidence N` to set the % confidence interval for the error margin, with the default value being 95.
 - Use `--concurrency N` to set the number of parallel processes, with the default being the number of CPU hardware threads.
 - Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
-- Use `--decimal N` to round ratings results to N decimal places. Default value is 1.
+- Use `--decimal N` to round ratings results to N decimal places, with the default value being 1.
 - Use `--exclude PLAYER1 PLAYER2 PLAYER3 ...` if you want to exclude a list of engines/players from the rating list.
 - Use `--include PLAYER1 PLAYER2 PLAYER3 ...` if you want to only include the engines/players listed into the rating list.
 - Use `--output FILE` if you want to output the ratings as a text file.
@@ -23,6 +22,7 @@ How to use:
 - Use `--head2head FILE` if you want to output head-to-head results to a text file.
 - Use `--losmatrix FILE` if you want to output matrix of LOS values as a csv FILE.
 - Use `--quiet` if you want to silence progress updates.
+- Use `--rngseed N` to set the seed for the random number generator, with the default seed being 42.
 - For very large PGN files (>1GB), it is recommended to shrink the PGN file beforehand to massively reduce the PGN loading/parsing time. this can be done by using the `shrinkpgn.py` script with the command: `python shrinkpgn.py --inputfile FILENAME --outputfile FILENAME`
 
 Example output from SPCC [UHO-Top15 Ratinglist](https://www.sp-cc.de/) (average Elo set to 0):
