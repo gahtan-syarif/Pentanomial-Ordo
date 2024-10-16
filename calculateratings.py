@@ -306,7 +306,8 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
                     file.write(line + "\n")
             except IOError as e:
                 # Handle file I/O errors
-                print(f"Error writing to file {filename}: {e}")
+                print(f"Error writing to file {filename}: {e}", file=sys.stderr)
+                exit(1)
             
     # Define header strings
     headers = [
@@ -558,7 +559,8 @@ def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal, lo
                     file.write(line + "\n")
             except IOError as e:
                 # Handle file I/O errors
-                print(f"Error writing to file {filename}: {e}")
+                print(f"Error writing to file {filename}: {e}", file=sys.stderr)
+                exit(1)
     LL = {}
     LD = {}
     WLDD = {}
@@ -586,7 +588,8 @@ def head_to_head(results, filename):
                     file.write(line + "\n")
             except IOError as e:
                 # Handle file I/O errors
-                print(f"Error writing to file {filename}: {e}")
+                print(f"Error writing to file {filename}: {e}", file=sys.stderr)
+                exit(1)
                 
     engines_str_length = max(len(f"{engine} vs {opponent}") for engine, opponents in results.items() for opponent, _ in opponents.items())
     penta_str_length = max(len(f"{scores}") for engine, opponents in results.items() for opponent, scores in opponents.items())
