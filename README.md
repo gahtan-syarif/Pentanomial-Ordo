@@ -13,7 +13,7 @@ How to use:
 - Use `--anchor PLAYER` if you want to set an anchor engine/player.
 - Use `--confidence N` to set the % confidence interval for the error margin, with the default value being 95.
 - Use `--concurrency N` to set the number of parallel processes, with the default being the number of CPU hardware threads.
-- Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation.
+- Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation. This feature is experimental.
 - Use `--decimal N` to round ratings results to N decimal places, with the default value being 1.
 - Use `--exclude PLAYER1 PLAYER2 PLAYER3 ...` if you want to exclude a list of engines/players from the rating list.
 - Use `--include PLAYER1 PLAYER2 PLAYER3 ...` if you want to only include the engines/players listed into the rating list.
