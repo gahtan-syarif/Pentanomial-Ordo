@@ -321,9 +321,9 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
         "(%)"
     ]
     
-    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + max_los_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 17))
-    output_line(f"{headers[0]:<{rank_length}}  {headers[1]:<{max_engine_length}}:  {headers[2]:>{max_mean_length}}  {headers[3]:<{total_error_length}}  {headers[4]:>{max_los_length}}  {headers[5]:<{penta_stats_length}}  {headers[6]:>{points_length}}  {headers[7]:>{pairs_length}}  {headers[8]:>{performance_stats_length}}")
-    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + max_los_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 17))
+    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + max_los_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 19))
+    output_line(f"{headers[0]:<{rank_length}}  {headers[1]:<{max_engine_length}}  :  {headers[2]:>{max_mean_length}}  {headers[3]:<{total_error_length}}  {headers[4]:>{max_los_length}}  {headers[5]:<{penta_stats_length}}  {headers[6]:>{points_length}}  {headers[7]:>{pairs_length}}  {headers[8]:>{performance_stats_length}}")
+    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + max_los_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 19))
     # Print each engine's ratings with formatted errors and confidence intervals
     i = 0
     for engine, (mean_rating, lower_bound, upper_bound) in ratings_with_error_bars.items():
@@ -335,8 +335,8 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
         points_str = f"{points[engine]:.1f}"
         los_str = f"{los[engine]:.{decimal}f}"
 
-        output_line(f"{i:<{rank_length}}  {engine:<{max_engine_length}}:  {mean_rating_str:>{max_mean_length}}  {error_str:<{total_error_length}}  {los_str:>{max_los_length}}  {penta_stats[engine]:<{penta_stats_length}}  {points_str:>{points_length}}  {pairs_str:>{pairs_length}}  {performance_stats[engine]:>{performance_stats_length}}")
-    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + max_los_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 17))
+        output_line(f"{i:<{rank_length}}  {engine:<{max_engine_length}}  :  {mean_rating_str:>{max_mean_length}}  {error_str:<{total_error_length}}  {los_str:>{max_los_length}}  {penta_stats[engine]:<{penta_stats_length}}  {points_str:>{points_length}}  {pairs_str:>{pairs_length}}  {performance_stats[engine]:>{performance_stats_length}}")
+    output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + max_los_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 19))
 
 def sort_engines_by_mean(ratings_with_error_bars):
     """
@@ -588,6 +588,7 @@ def main():
     parser.add_argument('--exclude', type=str, nargs='+', default=[])
     parser.add_argument('--include', type=str, nargs='+', default=[])
     parser.add_argument('--decimal', type=int, default=1)
+    parser.add_argument('--quiet', action='store_true')
     args = parser.parse_args()
     script_start_time = time.time()
     if args.confidence <= 0.0 or args.confidence >=100.0:
@@ -601,7 +602,8 @@ def main():
     # update_pentanomial(results, 'AlphaZero', 'Leela', [6, 4, 2, 85, 3])
     # update_pentanomial(results, 'Leela', 'Stockfish', [5, 64, 26, 3, 2])
     
-    print("Loading PGN...")
+    if not args.quiet:
+        print("Loading PGN...")
     pgnfiles = args.pgnfile.copy()
     if args.pgndirectory:
         pgndirectory = Path(args.pgndirectory).resolve()
@@ -650,7 +652,8 @@ def main():
     # Simulate the tournament
     num_simulations = args.simulations
     simulated_ratings = {}
-    print("Commencing simulation...")
+    if not args.quiet:
+        print("Commencing simulation...")
     simulation_start_time = time.time()
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
@@ -665,7 +668,8 @@ def main():
     simulation_end_time = time.time()
     simulation_elapsed_time = simulation_end_time - simulation_start_time
 
-    print("Finalizing results...")
+    if not args.quiet:
+        print("Finalizing results...")
     confidence_intervals = calculate_percentile_intervals(simulated_ratings, args.confidence)
     #combine the two dicts
     ratings_with_error_bars = {}
@@ -683,8 +687,9 @@ def main():
     output_to_csv(summed_results, ratings_with_error_bars, args.csv, args.decimal, los)
     script_end_time = time.time()
     script_elapsed_time = script_end_time - script_start_time
-    print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
-    print(f"Total elapsed time: {script_elapsed_time:.4f} seconds")
+    if not args.quiet:
+        print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
+        print(f"Total elapsed time: {script_elapsed_time:.4f} seconds")
         
 if __name__ == "__main__":
     main()
