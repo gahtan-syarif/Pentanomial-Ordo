@@ -10,7 +10,7 @@ How to use:
 - Required Python dependencies: numpy, scipy
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
 - Use `--pgndirectory DIRECTORY` if you want to automatically input all PGN files within a directory.
-- Use `--simulations N` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes.
+- Use `--simulations N` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes. Number of simulations greater than 10000 is likely not necessary.
 - Use `--average N` to set the average rating for the pool, with the default being 2300.
 - Use `--anchor PLAYER` if you want to set an anchor engine/player. The elo of the anchor would be fixed to the value set with `--average`.
 - Use `--poolrelative` if you want to make the error margins relative to the pool instead of the anchor when an anchor is selected.
