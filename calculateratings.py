@@ -93,12 +93,12 @@ def parse_pgn(pgn_file_path):
     
     # Use a buffer to accumulate relevant lines
     buffer = []
-    
+    tags = ("[Round","[White","[Black","[Result")
     with open(pgn_file_path, 'r') as pgn_file:
         for line in pgn_file:
-            if line.startswith('['):
+            if line.startswith(tags):
                 buffer.append(line)
-            elif buffer:  # When encountering a non-header line, process the accumulated buffer
+            elif buffer and not line.startswith("["):  # When encountering a non-header line, process the accumulated buffer
                 # Combine buffer lines into a single string
                 buffer_data = ''.join(buffer)
                 # Apply regex to the accumulated lines
