@@ -10,7 +10,8 @@ How to use:
 - Use `--pgndirectory DIRECTORY` if you want to automatically input all PGN files within a directory.
 - Use `--simulations N` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes.
 - Use `--average N` to set the average rating for the pool, with the default being 2300.
-- Use `--anchor PLAYER` if you want to set an anchor engine/player.
+- Use `--anchor PLAYER` if you want to set an anchor engine/player. The elo of the anchor would be fixed to the value set in `--average`.
+- Use `--poolrelative` if you want to make the error margins relative to the pool instead of the anchor when an anchor is selected.
 - Use `--confidence N` to set the % confidence interval for the error margin, with the default value being 95.
 - Use `--concurrency N` to set the number of parallel processes, with the default being the number of CPU hardware threads.
 - Use `--purge` if you want to purge/exclude perfect wins/losses from ratings calculation. This feature is experimental.
