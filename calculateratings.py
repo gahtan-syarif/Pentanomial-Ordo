@@ -428,7 +428,7 @@ def objective_function(ratings_array, engines, score_matrix):
     
     return total_error
     
-def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean, anchor_engine):
+def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean, anchor_engine, poolrelative):
     """ Optimize Elo ratings to minimize the discrepancy with expected scores. """
     num_engines = len(engines)
     score_matrix = scores_to_matrix(engines, score_dict)
@@ -453,7 +453,7 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
     normalized_ratings_dict = normalize_ratings_dict_to_target(optimized_ratings_dict, target_mean)
     
     # Normalize rating to anchor rating
-    if anchor_engine != "":
+    if anchor_engine != "" and not poolrelative:
         normalized_ratings_dict = normalize_ratings_with_anchor(optimized_ratings_dict, anchor_engine, target_mean)
     
     return normalized_ratings_dict
@@ -525,12 +525,12 @@ def set_initial_ratings(engines):
         initial_rating[engine] = 0
     return initial_rating
     
-def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge):
+def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge, poolrelative):
     # Each process gets its own RNG with a different seed
     rng = np.random.default_rng(seed + i)
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results, purge)
-    return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor)
+    return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor, poolrelative)
     
 def format_penta_stats(summed_results, decimal):
     penta_stats = {}
@@ -652,7 +652,18 @@ def los_matrix(simulated_ratings, ratings_with_error_bars, filename, decimals):
     except IOError as e:
         print(f"Error writing to file {filename}: {e}", file=sys.stderr)
         exit(1)
-            
+        
+def pool_relative_error(ratings_with_error_bars, poolrelative, anchor, average):
+    if (poolrelative == False or anchor == ''):
+        return ratings_with_error_bars
+        
+    delta = average - ratings_with_error_bars[anchor][0]
+    
+    ratings_with_error_bars_updated = {}
+    for engine in ratings_with_error_bars.keys():
+        ratings_with_error_bars_updated[engine] = (ratings_with_error_bars[engine][0] + delta, ratings_with_error_bars[engine][1] + delta, ratings_with_error_bars[engine][2] + delta)
+    return ratings_with_error_bars_updated
+    
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--pgnfile', type=str, nargs='+', default=[])
@@ -670,6 +681,7 @@ def main():
     parser.add_argument('--include', type=str, nargs='+', default=[])
     parser.add_argument('--decimal', type=int, default=1)
     parser.add_argument('--quiet', action='store_true')
+    parser.add_argument('--poolrelative', action='store_true')
     parser.add_argument('--head2head', type=str, default="")
     parser.add_argument('--losmatrix', type=str, default="")
     args = parser.parse_args()
@@ -729,7 +741,9 @@ def main():
     scores = calculate_expected_scores(results, args.purge)
     summed_results = sum_all_results(results)
     initial_ratings = set_initial_ratings(engines)
-    mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor)
+    if args.anchor != '' and args.anchor not in engines:
+        raise ValueError(f"{args.anchor} is not in the ratings dictionary.")
+    mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor, args.poolrelative)
     probabilities = calculate_probabilities(results)
 
     # Simulate the tournament
@@ -741,7 +755,7 @@ def main():
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
         futures = [
-            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor, initial_ratings, args.purge)
+            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor, initial_ratings, args.purge, args.poolrelative)
             for i in range(num_simulations)
         ]
         for future in as_completed(futures):
@@ -764,6 +778,7 @@ def main():
 
     #print final ratings with confidence intervals
     ratings_with_error_bars = sort_engines_by_mean(ratings_with_error_bars)
+    ratings_with_error_bars = pool_relative_error(ratings_with_error_bars, args.poolrelative, args.anchor, args.average)
     los = calculate_los(simulated_ratings, ratings_with_error_bars)
     los_matrix(simulated_ratings, ratings_with_error_bars, args.losmatrix, args.decimal)
     penta_stats, performance_stats = format_penta_stats(summed_results, args.decimal)
