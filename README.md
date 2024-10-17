@@ -23,7 +23,7 @@ How to use:
 - Use `--output FILE` if you want to output the ratings as a text file.
 - Use `--csv FILE` if you want to output the ratings as a csv file.
 - Use `--head2head FILE` if you want to output head-to-head results to a text file.
-- Use `--losmatrix FILE` if you want to output matrix of LOS values as a csv FILE.
+- Use `--losmatrix FILE` if you want to output matrix of LOS values as a csv file.
 - Use `--quiet` if you want to silence progress updates.
 - Use `--rngseed N` to set the seed for the random number generator, with the default seed being 42.
 - For very large PGN files (>1GB), it is recommended to shrink the PGN file beforehand to massively reduce the PGN loading/parsing time. this can be done by using the `shrinkpgn.py` script with the command: `python shrinkpgn.py --inputfile FILE --outputfile FILE`
