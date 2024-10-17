@@ -526,8 +526,7 @@ def set_initial_ratings(engines):
     return initial_rating
     
 def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge, poolrelative):
-    # Each process gets its own RNG with a different seed
-    rng = np.random.default_rng(seed + i)
+    rng = np.random.default_rng(seed)
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results, purge)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor, poolrelative)
@@ -673,7 +672,7 @@ def main():
     parser.add_argument('--anchor', type=str, default="")
     parser.add_argument('--output', type=str, default="")
     parser.add_argument('--csv', type=str, default="")
-    parser.add_argument('--rngseed', type=int, default=42)
+    parser.add_argument('--rngseed', type=int, default=321140339834632891350088547258043785703)
     parser.add_argument('--concurrency', type=int, default=os.cpu_count())
     parser.add_argument('--purge', action='store_true')
     parser.add_argument('--confidence', type=float, default=95.0)
@@ -752,10 +751,12 @@ def main():
     if not args.quiet:
         print("Commencing simulation...")
     simulation_start_time = time.time()
+    ss = np.random.SeedSequence(args.rngseed)
+    seeds = ss.spawn(args.simulations)
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
         futures = [
-            executor.submit(run_simulation, i, probabilities, engines, args.rngseed, results, args.average, args.anchor, initial_ratings, args.purge, args.poolrelative)
+            executor.submit(run_simulation, i, probabilities, engines, seeds[i], results, args.average, args.anchor, initial_ratings, args.purge, args.poolrelative)
             for i in range(num_simulations)
         ]
         for future in as_completed(futures):
