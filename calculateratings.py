@@ -423,10 +423,10 @@ def objective_function(ratings_array, engines, score_matrix):
     cross_entropy_loss = - (score_matrix[mask] * np.log(predicted_scores[mask]) + 
                              (1 - score_matrix[mask]) * np.log(1 - predicted_scores[mask]))
     
-    # Sum the cross-entropy loss
-    total_error = np.sum(cross_entropy_loss)
+    # Average the cross-entropy loss
+    mean_error = np.mean(cross_entropy_loss)
     
-    return total_error
+    return mean_error
     
 def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean, anchor_engine, poolrelative):
     """ Optimize Elo ratings to minimize the discrepancy with expected scores. """
