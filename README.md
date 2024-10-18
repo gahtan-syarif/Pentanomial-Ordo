@@ -7,7 +7,7 @@ This script was made to tackle the issue where ordo displays incorrect error mar
 How to use:
 - This script only works for tournaments where games are played in pairs where each engine/player swaps colors.
 - Each game in the PGN file must have at minimum a "Round", "White", "Black", and "Result" header tags listed in that order. Games that are played in pairs must share the same "Round" tag. An example of a correctly formatted PGN file is provided above.
-- Required Python dependencies: numpy, scipy
+- Required Python dependencies: numpy (version >= 1.17.0), scipy
 - Run the command: `python calculateratings.py --pgnfile FILE` or `python calculateratings.py --pgnfile FILE1 FILE2 FILE3 ...` for multiple PGN's.
 - Use `--pgndirectory DIRECTORY` if you want to automatically input all PGN files within a directory.
 - Use `--simulations N` to set the number of simulations, with the default being 1000. For the number of simulations the recommended minimum amount is 1000, although the higher the more accurate the error margin and LOS becomes. Number of simulations greater than 10000 is likely not necessary.
