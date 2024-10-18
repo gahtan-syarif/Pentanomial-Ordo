@@ -526,7 +526,7 @@ def set_initial_ratings(engines):
     return initial_rating
     
 def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge, poolrelative):
-    rng = np.random.default_rng(seed)
+    rng = np.random.Generator(np.random.PCG64(seed))
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results, purge)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor, poolrelative)
