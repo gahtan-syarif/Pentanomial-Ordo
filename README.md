@@ -2,7 +2,7 @@
 
 This is a Python script that calculates the pentanomial elo ratings of chess engines/players in a tournament using a similar methodology to [Ordo](https://github.com/michiguel/Ordo). Ratings are calculated using an [optimization algorithm](https://en.wikipedia.org/wiki/Limited-memory_BFGS) with its error margins and CFS/LOS being calculated through non-parametric stratified [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)).
 
-This script was made to tackle the issue where ordo displays incorrect error margins and CFS/LOS for tournaments where games are played in pairs in which each player/engine swaps sides, especially if unbalanced opening books are used. This is because ordo calculates those values using trinomial (win-draw-loss) probabilities that are inaccurate for paired games. To fix this, this script uses pentanomial (game pair) probabilities that gives a better estimate for the error margins and CFS/LOS.
+This script was made to tackle the issue where ordo displays incorrect error margins and CFS/LOS for tournaments where games are played in pairs in which each player/engine swaps sides, especially if unbalanced opening books are used. This is because ordo calculates those values using trinomial (win-draw-loss) probabilities that are inaccurate for paired games. To fix this, this script uses [pentanomial](https://github.com/vdbergh/pentanomial) (game pair) probabilities that gives a better estimate for the error margins and CFS/LOS.
 
 How to use:
 - This script only works for tournaments where games are played in pairs where each engine/player swaps colors.
