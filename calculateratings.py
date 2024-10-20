@@ -401,42 +401,35 @@ def ratings_array_to_dict(ratings_array, engines):
     """ Convert a NumPy array of Elo ratings back to a dictionary. """
     return {engine: rating for engine, rating in zip(engines, ratings_array)}
     
-def objective_function(ratings_array, engines, score_matrix):
-    num_engines = len(engines)
+def objective_function(ratings_array, num_engines, score_matrix, mask):
     ratings = ratings_array.reshape(num_engines, 1)
     
     # Compute the difference matrix
     rating_diff = ratings.T - ratings
     
     # Compute the predicted scores matrix
-    predicted_scores = 1 / (1 + 10 ** (rating_diff / 400))
-    # predicted_scores = 1 / (1 + np.exp(1) ** (rating_diff * 0.00570633)) #ordo's model
+    predicted_scores = np.zeros((num_engines, num_engines))
+    predicted_scores[mask] = 1 / (1 + 10 ** (rating_diff[mask] / 400))
     
-    # Create a mask to exclude perfect scores
-    mask = (score_matrix != 0) & (score_matrix != 1) & np.triu(np.ones_like(score_matrix, dtype=bool), k=1)
-    
-    # Compute the binary cross-entropy only for non-perfect scores
     # We need to clip predicted_scores to avoid log(0)
     predicted_scores = np.clip(predicted_scores, 1e-15, 1 - 1e-15)
     
     # Calculate the binary cross-entropy loss
-    cross_entropy_loss = - (score_matrix[mask] * np.log(predicted_scores[mask]) + 
-                             (1 - score_matrix[mask]) * np.log(1 - predicted_scores[mask]))
+    cross_entropy_loss = np.mean(- (score_matrix[mask] * np.log(predicted_scores[mask]) + (1 - score_matrix[mask]) * np.log(1 - predicted_scores[mask])))
     
-    # Average the cross-entropy loss
-    mean_error = np.mean(cross_entropy_loss)
-    
-    return mean_error
+    return cross_entropy_loss
     
 def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean, anchor_engine, poolrelative):
     """ Optimize Elo ratings to minimize the discrepancy with expected scores. """
     num_engines = len(engines)
     score_matrix = scores_to_matrix(engines, score_dict)
+    # Create a mask to exclude perfect scores
+    mask = (score_matrix != 0) & (score_matrix != 1) & np.triu(np.ones_like(score_matrix, dtype=bool), k=1)
     initial_ratings_array = ratings_dict_to_array(initial_ratings_dict, engines)
     result = minimize(
         objective_function,
         initial_ratings_array,
-        args=(engines, score_matrix),
+        args=(num_engines, score_matrix, mask),
         method='L-BFGS-B',
         bounds=[(-np.inf, np.inf)] * num_engines,
         options={'gtol': 1e-8}  # Increased precision
