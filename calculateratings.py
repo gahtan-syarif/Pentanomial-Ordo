@@ -179,7 +179,7 @@ def update_game_pairs_pgn(results, rounds):
                 print("Error: incorrectly formatted 'Result' header tag in PGN", file=sys.stderr)
                 exit(1)
 
-def simulate_matches(prob, num_pairs_per_pairing, rng):
+def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng, sim_results):
     """
     Simulate matches for a specific pair of engines using a local random state.
 
@@ -191,14 +191,18 @@ def simulate_matches(prob, num_pairs_per_pairing, rng):
     :return: List of outcomes for all simulations.
     """
     outcomes = ['LL', 'LD', 'WLDD', 'WD', 'WW']
+    prob = probabilities[engine1][engine2]
     
     # Simulate matches
-    results = []
+    results = np.zeros(5, dtype=int)
     if num_pairs_per_pairing > 0:
         outcomes_indices = rng.choice(5, size=num_pairs_per_pairing, p=prob)
-        results = [outcomes[index] for index in outcomes_indices]
-    
-    return results
+        
+        # Update the results for engine1 vs engine2
+        np.add.at(results, outcomes_indices, 1)
+        
+        sim_results[engine1][engine2] = tuple(results)
+        sim_results[engine2][engine1] = tuple(results[::-1])
     
 def calculate_probabilities(results):
     probabilities = {}
@@ -223,39 +227,9 @@ def simulate_tournament(probabilities, engines, rng, results):
         for j in range(i + 1, len(engines)):
             LL, LD, WLDD, WD, WW = results[engines[i]][engines[j]]
             total_pairs = LL + LD + WLDD + WD + WW
-            outcomes = simulate_matches(probabilities[engines[i]][engines[j]], total_pairs, rng)
-            update_results_batch(sim_results, engines[i], engines[j], outcomes)
+            simulate_matches(probabilities, engines[i], engines[j], total_pairs, rng, sim_results)
                 
     return sim_results
-
-def update_results_batch(results, engine1, engine2, outcomes): 
-    # Count occurrences of each outcome
-    outcome_counts = Counter(outcomes)
-    
-    # Extract counts with a default of 0 if the outcome is not present
-    LL_count = outcome_counts.get('LL', 0)
-    LD_count = outcome_counts.get('LD', 0)
-    WLDD_count = outcome_counts.get('WLDD', 0)
-    WD_count = outcome_counts.get('WD', 0)
-    WW_count = outcome_counts.get('WW', 0)
-    
-    # Update the results for engine1 vs engine2
-    results[engine1][engine2] = (
-        results[engine1][engine2][0] + LL_count,
-        results[engine1][engine2][1] + LD_count,
-        results[engine1][engine2][2] + WLDD_count,
-        results[engine1][engine2][3] + WD_count,
-        results[engine1][engine2][4] + WW_count
-    )
-    
-    # Mirror the result for engine2 vs engine1
-    results[engine2][engine1] = (
-        results[engine1][engine2][4],
-        results[engine1][engine2][3],
-        results[engine1][engine2][2],
-        results[engine1][engine2][1],
-        results[engine1][engine2][0]
-    )
         
 def update_pentanomial(results, engine1, engine2, pentanomial):
     results[engine1][engine2] = tuple(pentanomial)
