@@ -1,4 +1,4 @@
-from collections import defaultdict, deque, Counter
+from collections import defaultdict, deque
 from scipy.optimize import minimize
 import subprocess
 import os
