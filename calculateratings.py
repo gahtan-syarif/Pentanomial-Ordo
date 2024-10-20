@@ -180,16 +180,6 @@ def update_game_pairs_pgn(results, rounds):
                 exit(1)
 
 def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng, sim_results):
-    """
-    Simulate matches for a specific pair of engines using a local random state.
-
-    :param probabilities: A dictionary with probabilities for each pair.
-    :param engine1: The first engine in the pair.
-    :param engine2: The second engine in the pair.
-    :param num_pairs_per_pairing: Number of simulations to run for the pair.
-    :param seed: Optional seed for reproducibility.
-    :return: List of outcomes for all simulations.
-    """
     prob = probabilities[engine1][engine2]
     
     # Simulate matches
@@ -197,10 +187,10 @@ def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng
         outcomes_indices = rng.choice(5, size=num_pairs_per_pairing, p=prob)
         
         # Update the results for engine1 vs engine2
-        results = np.bincount(outcomes_indices, minlength=5)
+        results = tuple(np.bincount(outcomes_indices, minlength=5))
         
-        sim_results[engine1][engine2] = tuple(results)
-        sim_results[engine2][engine1] = tuple(results[::-1])
+        sim_results[engine1][engine2] = results
+        sim_results[engine2][engine1] = results[::-1]
     
 def calculate_probabilities(results):
     probabilities = {}
@@ -312,13 +302,6 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
     output_line("=" * (rank_length + max_engine_length + max_mean_length + total_error_length + max_los_length + penta_stats_length + performance_stats_length + points_length + pairs_length + 19))
 
 def sort_engines_by_mean(ratings_with_error_bars):
-    """
-    Sorts the engines by their mean ratings from highest to lowest.
-
-    :param ratings_with_error_bars: Dictionary where keys are engine names and values are tuples
-                                    containing (mean_rating, lower_bound, upper_bound).
-    :return: A new dictionary sorted by mean rating in descending order.
-    """
     # Convert dictionary to a list of tuples (engine_name, (mean_rating, lower_bound, upper_bound))
     items = list(ratings_with_error_bars.items())
     
@@ -426,18 +409,6 @@ def normalize_ratings_to_target(ratings_array, target_mean):
     return ratings_array + adjustment_factor
 
 def normalize_ratings_with_anchor(ratings_dict, anchor_engine, anchor_rating):
-    """
-    Normalize the Elo ratings of all engines so that the specified anchor_engine's rating
-    is set to anchor_rating and all other ratings are adjusted relative to it.
-
-    Parameters:
-    - ratings_dict: Dictionary with engine names as keys and their Elo ratings as values.
-    - anchor_engine: The engine whose rating will be used as the anchor.
-    - anchor_rating: The constant rating to which the anchor_engine's rating will be set.
-
-    Returns:
-    - A dictionary with normalized Elo ratings.
-    """
     # Get the rating of the anchor engine
     if anchor_engine not in ratings_dict:
         raise ValueError(f"{anchor_engine} is not in the ratings dictionary.")
