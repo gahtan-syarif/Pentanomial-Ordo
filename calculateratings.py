@@ -190,16 +190,14 @@ def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng
     :param seed: Optional seed for reproducibility.
     :return: List of outcomes for all simulations.
     """
-    outcomes = ['LL', 'LD', 'WLDD', 'WD', 'WW']
     prob = probabilities[engine1][engine2]
     
     # Simulate matches
-    results = np.zeros(5, dtype=int)
     if num_pairs_per_pairing > 0:
         outcomes_indices = rng.choice(5, size=num_pairs_per_pairing, p=prob)
         
         # Update the results for engine1 vs engine2
-        np.add.at(results, outcomes_indices, 1)
+        results = np.bincount(outcomes_indices, minlength=5)
         
         sim_results[engine1][engine2] = tuple(results)
         sim_results[engine2][engine1] = tuple(results[::-1])
@@ -378,11 +376,11 @@ def objective_function(ratings_array, num_engines, score_matrix, mask):
     ratings = ratings_array.reshape(num_engines, 1)
     
     # Compute the difference matrix
-    rating_diff = ratings.T - ratings
+    rating_diff_scaled = (ratings.T - ratings) / 400
     
     # Compute the predicted scores matrix
     predicted_scores = np.zeros((num_engines, num_engines))
-    predicted_scores[mask] = 1 / (1 + 10 ** (rating_diff[mask] / 400))
+    predicted_scores[mask] = 1 / (1 + np.power(10, rating_diff_scaled[mask]))
     
     # We need to clip predicted_scores to avoid log(0)
     predicted_scores = np.clip(predicted_scores, 1e-15, 1 - 1e-15)
