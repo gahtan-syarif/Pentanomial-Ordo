@@ -437,26 +437,22 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
     # Check if the result converged
     # if not result.success:
         # print("Warning: one of the simulations did not converge properly")
-    optimized_ratings_array = result.x
+    optimized_ratings_array = normalize_ratings_to_target(result.x, target_mean)
     
     # Convert optimized ratings array back to dictionary
     optimized_ratings_dict = ratings_array_to_dict(optimized_ratings_array, engines)
     
-    # Normalize ratings to target mean
-    normalized_ratings_dict = normalize_ratings_dict_to_target(optimized_ratings_dict, target_mean)
-    
     # Normalize rating to anchor rating
     if anchor_engine != "" and not poolrelative:
-        normalized_ratings_dict = normalize_ratings_with_anchor(optimized_ratings_dict, anchor_engine, target_mean)
+        optimized_ratings_dict = normalize_ratings_with_anchor(optimized_ratings_dict, anchor_engine, target_mean)
     
-    return normalized_ratings_dict
+    return optimized_ratings_dict
     
-def normalize_ratings_dict_to_target(ratings_dict, target_mean):
+def normalize_ratings_to_target(ratings_array, target_mean):
     """Normalize ratings so that the average rating is equal to the target mean."""
-    ratings_array = np.array(list(ratings_dict.values()))
     current_mean = np.mean(ratings_array)
     adjustment_factor = target_mean - current_mean
-    return {engine: rating + adjustment_factor for engine, rating in ratings_dict.items()}
+    return ratings_array + adjustment_factor
 
 def normalize_ratings_with_anchor(ratings_dict, anchor_engine, anchor_rating):
     """
