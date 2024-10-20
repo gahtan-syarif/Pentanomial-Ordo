@@ -179,7 +179,7 @@ def update_game_pairs_pgn(results, rounds):
                 print("Error: incorrectly formatted 'Result' header tag in PGN", file=sys.stderr)
                 exit(1)
 
-def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng):
+def simulate_matches(prob, num_pairs_per_pairing, rng):
     """
     Simulate matches for a specific pair of engines using a local random state.
 
@@ -191,7 +191,6 @@ def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng
     :return: List of outcomes for all simulations.
     """
     outcomes = ['LL', 'LD', 'WLDD', 'WD', 'WW']
-    prob = probabilities[engine1][engine2]
     
     # Simulate matches
     results = []
@@ -224,7 +223,7 @@ def simulate_tournament(probabilities, engines, rng, results):
         for j in range(i + 1, len(engines)):
             LL, LD, WLDD, WD, WW = results[engines[i]][engines[j]]
             total_pairs = LL + LD + WLDD + WD + WW
-            outcomes = simulate_matches(probabilities, engines[i], engines[j], total_pairs, rng)
+            outcomes = simulate_matches(probabilities[engines[i]][engines[j]], total_pairs, rng)
             update_results_batch(sim_results, engines[i], engines[j], outcomes)
                 
     return sim_results
