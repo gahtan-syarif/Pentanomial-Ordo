@@ -150,16 +150,14 @@ def update_game_pairs_pgn(results, rounds):
             
             # Store results for each game in the current round
             if white == black:  # Ensure it's a valid pair
-                print("Error: PGN contains match between two players/engines with the same name", file=sys.stderr)
-                exit(1)
+                raise ValueError("PGN contains match between two players/engines with the same name")
             round_results[(white, black)].append(result)
 
         # Process results for each engine pair
         for (engine1, engine2), results_list in round_results.items():
             results_list_opponent = round_results.get((engine2, engine1), [])
             if len(results_list) != 1 or len(results_list_opponent) != 1:
-                print("Error: PGN 'Round' header tag is incorrectly formatted. Make sure each gamepair has a unique 'Round' header tag.", file=sys.stderr)
-                exit(1)
+                raise ValueError("PGN 'Round' header tag is incorrectly formatted. Make sure each gamepair has a unique 'Round' header tag.")
             result1 = results_list[0]
             result2 = results_list_opponent[0]
             if result1 == '1-0' and result2 == '0-1':
@@ -173,11 +171,9 @@ def update_game_pairs_pgn(results, rounds):
             elif result1 == '0-1' and result2 == '1-0':
                 results[engine1][engine2] = (results[engine1][engine2][0] + 1, results[engine1][engine2][1], results[engine1][engine2][2], results[engine1][engine2][3], results[engine1][engine2][4])
             elif result1 == '*' or result2 == '*':
-                print("Error: PGN contains an undecided game.", file=sys.stderr)
-                exit(1)
+                raise ValueError("PGN contains an undecided game.")
             else:
-                print("Error: incorrectly formatted 'Result' header tag in PGN", file=sys.stderr)
-                exit(1)
+                raise ValueError("Incorrectly formatted 'Result' header tag in PGN")
 
 def simulate_matches(probabilities, engine1, engine2, num_pairs_per_pairing, rng, sim_results):
     prob = probabilities[engine1][engine2]
@@ -268,8 +264,7 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
                     file.write(line + "\n")
             except IOError as e:
                 # Handle file I/O errors
-                print(f"Error writing to file {filename}: {e}", file=sys.stderr)
-                exit(1)
+                raise IOError(f"Error writing to file {filename}: {e}")
             
     # Define header strings
     headers = [
@@ -490,8 +485,8 @@ def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal, lo
                     file.write(line + "\n")
             except IOError as e:
                 # Handle file I/O errors
-                print(f"Error writing to file {filename}: {e}", file=sys.stderr)
-                exit(1)
+                raise IOError(f"Error writing to file {filename}: {e}")
+                
     LL = {}
     LD = {}
     WLDD = {}
@@ -519,8 +514,7 @@ def head_to_head(results, filename):
                     file.write(line + "\n")
             except IOError as e:
                 # Handle file I/O errors
-                print(f"Error writing to file {filename}: {e}", file=sys.stderr)
-                exit(1)
+                raise IOError(f"Error writing to file {filename}: {e}")
                 
     engines_str_length = max(len(f"{engine} vs {opponent}") for engine, opponents in results.items() for opponent, _ in opponents.items())
     penta_str_length = max(len(f"{scores}") for engine, opponents in results.items() for opponent, scores in opponents.items())
@@ -580,8 +574,7 @@ def los_matrix(simulated_ratings, ratings_with_error_bars, filename, decimals):
                 writer.writerow(row)
                 increment += 1
     except IOError as e:
-        print(f"Error writing to file {filename}: {e}", file=sys.stderr)
-        exit(1)
+        raise IOError(f"Error writing to file {filename}: {e}")
         
 def pool_relative_error(ratings_with_error_bars, poolrelative, anchor, average):
     if (poolrelative == False or anchor == ''):
@@ -635,8 +628,7 @@ def main():
         if pgndirectory.is_dir():
             pgnfiles.extend(pgndirectory.glob('*.pgn'))
         else:
-            print(f"Error: {pgndirectory} is not a valid directory.", file=sys.stderr)
-            exit(1)
+            raise IOError(f"{pgndirectory} is not a valid directory.")
     individual_rounds = []
     engines_set = set()
     for pgnfile in pgnfiles:
