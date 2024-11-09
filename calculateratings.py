@@ -610,7 +610,7 @@ def main():
     parser.add_argument('--head2head', type=str, default="")
     parser.add_argument('--losmatrix', type=str, default="")
     args = parser.parse_args()
-    script_start_time = time.time()
+    script_start_time = time.perf_counter()
     if args.confidence <= 0.0 or args.confidence >=100.0:
         parser.error("Invalid confidence interval.")
     if not args.pgnfile and not args.pgndirectory:
@@ -675,7 +675,7 @@ def main():
     simulated_ratings = {}
     if not args.quiet:
         print("Commencing simulation...")
-    simulation_start_time = time.time()
+    simulation_start_time = time.perf_counter()
     ss = SeedSequence(args.rngseed)
     seeds = ss.spawn(args.simulations)
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
@@ -688,7 +688,7 @@ def main():
             i, rating = future.result()
             simulated_ratings[i] = rating
             # print(f"Finished simulation {i+1} out of {num_simulations}")
-    simulation_end_time = time.time()
+    simulation_end_time = time.perf_counter()
     simulation_elapsed_time = simulation_end_time - simulation_start_time
 
     if not args.quiet:
@@ -711,7 +711,7 @@ def main():
     output_to_csv(summed_results, ratings_with_error_bars, args.csv, args.decimal, los)
     head_to_head(results, args.head2head)
     format_ratings_result(ratings_with_error_bars, penta_stats, performance_stats, summed_results, args.output, args.decimal, los)
-    script_end_time = time.time()
+    script_end_time = time.perf_counter()
     script_elapsed_time = script_end_time - script_start_time
     if not args.quiet:
         print(f"Total simulation time: {simulation_elapsed_time:.4f} seconds")
