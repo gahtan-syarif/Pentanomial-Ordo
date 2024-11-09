@@ -1,16 +1,17 @@
-from collections import defaultdict, deque
+from collections import defaultdict
 from scipy.optimize import minimize
-import subprocess
 import os
 import re
 import sys
 import io
 import numpy as np
+from numpy.random import Generator, PCG64, SeedSequence
 import argparse
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 import csv
+# from randomgen import ChaCha
 
 def calculate_percentile_intervals(engine_ratings, percentile=95.0):
     """
@@ -452,7 +453,8 @@ def set_initial_ratings(engines):
     return initial_rating
     
 def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge, poolrelative):
-    rng = np.random.Generator(np.random.PCG64(seed))
+    rng = Generator(PCG64(seed))
+    # rng = Generator(ChaCha(seed))
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results, purge)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor, poolrelative)
@@ -674,7 +676,7 @@ def main():
     if not args.quiet:
         print("Commencing simulation...")
     simulation_start_time = time.time()
-    ss = np.random.SeedSequence(args.rngseed)
+    ss = SeedSequence(args.rngseed)
     seeds = ss.spawn(args.simulations)
     with ProcessPoolExecutor(max_workers = args.concurrency) as executor:
         # Pass a different seed to each process
