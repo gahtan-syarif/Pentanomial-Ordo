@@ -11,6 +11,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 import csv
+from itertools import combinations
 # from randomgen import ChaCha
 
 def calculate_percentile_intervals(engine_ratings, percentile=95.0):
@@ -208,12 +209,12 @@ def calculate_probabilities(results):
 def simulate_tournament(probabilities, engines, rng, results):
     sim_results = {engine: {opponent: (0, 0, 0, 0, 0) for opponent in engines if opponent != engine} for engine in engines}
     
-    for i in range(len(engines)):
-        for j in range(i + 1, len(engines)):
-            LL, LD, WLDD, WD, WW = results[engines[i]][engines[j]]
-            total_pairs = LL + LD + WLDD + WD + WW
-            simulate_matches(probabilities, engines[i], engines[j], total_pairs, rng, sim_results)
-                
+    engine_pairs = combinations(engines, 2)
+    for engine_i, engine_j in engine_pairs:
+        LL, LD, WLDD, WD, WW = results[engine_i][engine_j]
+        total_pairs = LL + LD + WLDD + WD + WW
+        simulate_matches(probabilities, engine_i, engine_j, total_pairs, rng, sim_results)
+        
     return sim_results
         
 def update_pentanomial(results, engine1, engine2, pentanomial):
