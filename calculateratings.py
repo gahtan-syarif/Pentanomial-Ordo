@@ -3,7 +3,6 @@ from scipy.optimize import minimize
 import os
 import re
 import sys
-import io
 import numpy as np
 from numpy.random import Generator, PCG64, SeedSequence
 import argparse
@@ -264,9 +263,9 @@ def format_ratings_result(ratings_with_error_bars, penta_stats, performance_stat
                 # Resolve the path and open the file in append mode
                 with open(Path(filename).resolve(), "a") as file:
                     file.write(line + "\n")
-            except IOError as e:
+            except OSError as e:
                 # Handle file I/O errors
-                raise IOError(f"Error writing to file {filename}: {e}")
+                raise OSError(f"Error writing to file {filename}: {e}")
             
     # Define header strings
     headers = [
@@ -488,9 +487,9 @@ def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal, lo
                 # Resolve the path and open the file in append mode
                 with open(Path(filename).resolve(), "a") as file:
                     file.write(line + "\n")
-            except IOError as e:
+            except OSError as e:
                 # Handle file I/O errors
-                raise IOError(f"Error writing to file {filename}: {e}")
+                raise OSError(f"Error writing to file {filename}: {e}")
                 
     LL = {}
     LD = {}
@@ -517,9 +516,9 @@ def head_to_head(results, filename):
                 # Resolve the path and open the file in append mode
                 with open(Path(filename).resolve(), "a") as file:
                     file.write(line + "\n")
-            except IOError as e:
+            except OSError as e:
                 # Handle file I/O errors
-                raise IOError(f"Error writing to file {filename}: {e}")
+                raise OSError(f"Error writing to file {filename}: {e}")
                 
     engines_str_length = max(len(f"{engine} vs {opponent}") for engine, opponents in results.items() for opponent, _ in opponents.items())
     penta_str_length = max(len(f"{scores}") for engine, opponents in results.items() for opponent, scores in opponents.items())
@@ -578,8 +577,8 @@ def los_matrix(simulated_ratings, ratings_with_error_bars, filename, decimals):
                     row.append(los)
                 writer.writerow(row)
                 increment += 1
-    except IOError as e:
-        raise IOError(f"Error writing to file {filename}: {e}")
+    except OSError as e:
+        raise OSError(f"Error writing to file {filename}: {e}")
         
 def pool_relative_error(ratings_with_error_bars, poolrelative, anchor, average):
     if (poolrelative == False or anchor == ''):
@@ -635,7 +634,7 @@ def main():
         if pgndirectory.is_dir():
             pgnfiles.extend(pgndirectory.glob('*.pgn'))
         else:
-            raise IOError(f"{pgndirectory} is not a valid directory.")
+            raise OSError(f"{pgndirectory} is not a valid directory.")
     individual_rounds = []
     engines_set = set()
     for pgnfile in pgnfiles:
