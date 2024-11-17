@@ -386,6 +386,7 @@ def optimize_elo_ratings(engines, score_dict, initial_ratings_dict, target_mean,
         options={'gtol': 1e-8}  # Increased precision
     )
     # Check if the result converged
+    # print(np.linalg.norm(result.jac))
     # if not result.success:
         # print("Warning: one of the simulations did not converge properly")
     optimized_ratings_array = normalize_ratings_to_target(result.x, target_mean)
@@ -447,10 +448,11 @@ def sum_all_results(results):
             
     return summed_results
     
-def set_initial_ratings(engines):
+def set_initial_ratings(engines, summed_results):
     initial_rating = {}
     for engine in engines:
-        initial_rating[engine] = 0
+        total_score = (summed_results[engine][1] * 0.25 + summed_results[engine][2] * 0.5 + summed_results[engine][3] * 0.75 + summed_results[engine][4]) / sum(summed_results[engine])
+        initial_rating[engine] = -400 * np.log(1 / total_score - 1) / np.log(10)
     return initial_rating
     
 def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge, poolrelative):
@@ -665,7 +667,7 @@ def main():
     # Calculate probabilities
     scores = calculate_expected_scores(results, args.purge)
     summed_results = sum_all_results(results)
-    initial_ratings = set_initial_ratings(engines)
+    initial_ratings = set_initial_ratings(engines, summed_results)
     if args.anchor != '' and args.anchor not in engines:
         raise ValueError(f"{args.anchor} is not in the ratings dictionary.")
     mean_rating = optimize_elo_ratings(engines, scores, initial_ratings, args.average, args.anchor, args.poolrelative)
