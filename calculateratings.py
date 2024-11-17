@@ -614,6 +614,8 @@ def main():
     parser.add_argument('--losmatrix', type=str, default="")
     args = parser.parse_args()
     script_start_time = time.perf_counter()
+    if (args.simulations < 1000 and not args.quiet):
+        print("Warning: Number of simulations is less than 1000, this could result in low accuracy of error margins and LOS.", file=sys.stderr)
     if args.confidence <= 0.0 or args.confidence >=100.0:
         parser.error("Invalid confidence interval.")
     if not args.pgnfile and not args.pgndirectory:
