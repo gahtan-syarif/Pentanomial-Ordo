@@ -26,7 +26,7 @@ This script was made to tackle the issue where ordo displays incorrect error mar
 - Use `--head2head FILE` if you want to output head-to-head results to a text file.
 - Use `--losmatrix FILE` if you want to output matrix of LOS values as a csv file.
 - Use `--quiet` if you want to silence progress updates and non-critical warnings.
-- Use `--rngseed N` to set the seed for the random number generator, with the default seed being 321140339834632891350088547258043785703. To reproduce identical random numbers across different environments, make sure to use the same seed and same version of numpy.
+- Use `--rngseed N` to set the 128-bit seed for the random number generator, with the default seed being 321140339834632891350088547258043785703. To reproduce identical random numbers across different environments, make sure to use the same seed and same version of numpy.
 - For very large PGN files (>1GB), it is recommended to shrink the PGN file beforehand to massively reduce the PGN loading/parsing time. this can be done by using the `shrinkpgn.py` script with the command: `python shrinkpgn.py --inputfile FILE --outputfile FILE`.
 
 Example output from SPCC [UHO-Top15 Ratinglist](https://www.sp-cc.de/) (average Elo set to 0):
