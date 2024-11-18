@@ -3,15 +3,17 @@ from scipy.optimize import minimize
 import os
 import re
 import sys
-import numpy as np
-from numpy.random import Generator, PCG64, SeedSequence
 import argparse
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 import csv
 from itertools import combinations
-# from randomgen import ChaCha
+import numpy as np
+try:
+    from numpy.random import PCG64DXSM, Generator, SeedSequence
+except:
+    from numpy.random import PCG64, Generator, SeedSequence
 
 def calculate_percentile_intervals(engine_ratings, percentile=95.0):
     """
@@ -455,8 +457,10 @@ def set_initial_ratings(engines, summed_results):
     return initial_rating
     
 def run_simulation(i, probabilities, engines, seed, results, average, anchor, initial_ratings, purge, poolrelative):
-    rng = Generator(PCG64(seed))
-    # rng = Generator(ChaCha(seed))
+    try:
+        rng = Generator(PCG64DXSM(seed))
+    except:
+        rng = Generator(PCG64(seed))
     simulated_results = simulate_tournament(probabilities, engines, rng, results)
     simulated_scores = calculate_expected_scores(simulated_results, purge)
     return i, optimize_elo_ratings(engines, simulated_scores, initial_ratings, average, anchor, poolrelative)
