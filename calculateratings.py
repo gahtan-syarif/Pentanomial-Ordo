@@ -476,7 +476,7 @@ def format_penta_stats(summed_results, decimal):
         else:
             performance = (LD * 0.25 + WLDD * 0.5 + WD * 0.75 + WW) / total_pairs
         penta_stats[engine] = f"[{LL}, {LD}, {WLDD}, {WD}, {WW}]"
-        performance_stats[engine] = f"{(performance * 100):.{decimal}f}%"
+        performance_stats[engine] = f"{(performance * 100):.{decimal}f}"
     return penta_stats, performance_stats
     
 def output_to_csv(summed_results, ratings_with_error_bars, filename, decimal, los):
@@ -595,6 +595,34 @@ def pool_relative_error(ratings_with_error_bars, poolrelative, anchor, average):
         ratings_with_error_bars_updated[engine] = (ratings_with_error_bars[engine][0] + delta, ratings_with_error_bars[engine][1] + delta, ratings_with_error_bars[engine][2] + delta)
     return ratings_with_error_bars_updated
     
+def print_progress_bar(completed, total, bar_length = 40, start_time = None):
+    percent = 100 * completed // total
+    percent_str = f"{percent:3d}%"
+    finished_length = bar_length * completed // total
+    unfinished_length = bar_length - finished_length
+
+    # elapsed + ETA
+    if start_time and (completed != total):
+        end_time = time.perf_counter()
+        elapsed = end_time - start_time
+        if completed > 0:
+            rate = elapsed / completed
+            eta = rate * (total - completed)
+        else:
+            eta = 0
+        eta_str = time.strftime("eta [%H:%M:%S]", time.gmtime(eta))
+        if elapsed < 10 or completed == 0:
+            eta_str = "eta [--:--:--]"
+    else:
+        eta_str = "eta [--:--:--]"
+
+    progress_block = "|" + ("█"*finished_length)+("-" * unfinished_length) + "|"
+    text = "\r" + percent_str + progress_block + f"{completed}/{total}" + " " + eta_str
+    if completed == total:
+        text += "\n"
+    sys.stdout.write(text)
+    sys.stdout.flush()
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--pgnfile', type=str, nargs='+', default=[])
@@ -692,10 +720,14 @@ def main():
             executor.submit(run_simulation, i, probabilities, engines, seeds[i], results, args.average, args.anchor, initial_ratings, args.purge, args.poolrelative)
             for i in range(num_simulations)
         ]
+        completed = 0
+        loop_start_time = time.perf_counter()
         for future in as_completed(futures):
             i, rating = future.result()
             simulated_ratings[i] = rating
-            # print(f"Finished simulation {i+1} out of {num_simulations}")
+            completed += 1
+            if not args.quiet:
+                print_progress_bar(completed, args.simulations, 40, loop_start_time)
     simulation_end_time = time.perf_counter()
     simulation_elapsed_time = simulation_end_time - simulation_start_time
 
