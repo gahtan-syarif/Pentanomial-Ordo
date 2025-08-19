@@ -602,10 +602,10 @@ def print_progress_bar(completed, total, bar_length = 40, start_time = None):
     unfinished_length = bar_length - finished_length
 
     # elapsed + ETA
+    eta_str = " eta [--:--:--]"
     if start_time and (completed != total):
         end_time = time.perf_counter()
         elapsed = end_time - start_time
-        eta_str = ""
         if completed > 0:
             rate = elapsed / completed
             eta = rate * (total - completed)
