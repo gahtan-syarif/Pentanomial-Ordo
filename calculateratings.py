@@ -605,19 +605,17 @@ def print_progress_bar(completed, total, bar_length = 40, start_time = None):
     if start_time and (completed != total):
         end_time = time.perf_counter()
         elapsed = end_time - start_time
+        eta_str = ""
         if completed > 0:
             rate = elapsed / completed
             eta = rate * (total - completed)
         else:
             eta = 0
-        eta_str = time.strftime("eta [%H:%M:%S]", time.gmtime(eta))
-        if elapsed < 10 or completed == 0:
-            eta_str = "eta [--:--:--]"
-    else:
-        eta_str = "eta [--:--:--]"
+        if elapsed >= 10 and completed > 0:
+            eta_str = time.strftime(" eta [%H:%M:%S]", time.gmtime(eta))
 
     progress_block = "|" + ("█"*finished_length)+("-" * unfinished_length) + "|"
-    text = "\r" + percent_str + progress_block + f"{completed}/{total}" + " " + eta_str
+    text = "\r" + percent_str + progress_block + f"{completed}/{total}" + eta_str
     if completed == total:
         text += "\n"
     sys.stdout.write(text)
